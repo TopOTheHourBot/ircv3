@@ -71,8 +71,7 @@ class IRCv3Command:
 
         Includes the comment (AKA "trailing") argument if present.
         """
-        arguments = []                     # Most commands have just 1-3 arguments, so
-        arguments.extend(self._arguments)  # this should be fairly quick
+        arguments = list(self._arguments)
         if (comment := self._comment) is not None:
             arguments.append(comment)
         return arguments
@@ -111,7 +110,7 @@ class IRCv3Command:
             source = None
 
         name = parser.take_until(exclude_current=False)
-        arguments = parser.take_until(target=" :", exclude_current=False).split()
+        arguments = parser.take_until(" :", exclude_current=False).split()
 
         if parser.ok():
             comment = parser.advance().take_all()
