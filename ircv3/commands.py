@@ -22,6 +22,7 @@ class IRCv3Command:
     __match_args__ = (
         "name",
         "arguments",
+        "comment",
         "tags",
         "source",
     )
@@ -48,16 +49,15 @@ class IRCv3Command:
 
     def __repr__(self) -> str:
         parts = []
-        name  = self._name
-        parts.append("name=" + repr(name))
-        if (arguments := self._arguments):
-            parts.append("arguments=" + repr(arguments))
-        if (comment := self._comment) is not None:
-            parts.append("comment=" + repr(comment))
-        if (tags := self._tags) is not None:
-            parts.append("tags=" + repr(tags))
-        if (source := self._source) is not None:
-            parts.append("source=" + repr(source))
+        parts.append("name=" + repr(self._name))
+        if self._arguments:
+            parts.append("arguments=" + repr(self._arguments))
+        if self._comment is not None:
+            parts.append("comment=" + repr(self._comment))
+        if self._tags is not None:
+            parts.append("tags=" + repr(self._tags))
+        if self._source is not None:
+            parts.append("source=" + repr(self._source))
         return "IRCv3Command(" + ", ".join(parts) + ")"
 
     @property
@@ -69,12 +69,14 @@ class IRCv3Command:
     def arguments(self) -> Sequence[str]:
         """The command's arguments
 
-        Includes the comment (AKA "trailing") argument if present.
+        Note that this does not include the comment (AKA trailing argument).
         """
-        arguments = list(self._arguments)
-        if (comment := self._comment) is not None:
-            arguments.append(comment)
-        return arguments
+        return self._arguments
+
+    @property
+    def comment(self) -> Optional[str]:
+        """The command's comment"""
+        return self._comment
 
     @property
     def tags(self) -> Optional[Mapping[str, str]]:
@@ -128,14 +130,14 @@ class IRCv3Command:
     def to_string(self) -> str:
         """Return the command as a raw data string"""
         parts = []
-        if (tags := self._tags) is not None:
-            parts.append("@" + ";".join(itertools.starmap(lambda label, value: f"{label}={value}", tags.items())))
-        if (source := self._source) is not None:
-            parts.append(":" + source)
+        if self._tags is not None:
+            parts.append("@" + ";".join(itertools.starmap(lambda label, value: f"{label}={value}", self._tags.items())))
+        if self._source is not None:
+            parts.append(":" + self._source)
         parts.append(self._name)
         parts.extend(self._arguments)
-        if (comment := self._comment) is not None:
-            parts.append(":" + comment)
+        if self._comment is not None:
+            parts.append(":" + self._comment)
         return " ".join(parts)
 
     __str__ = to_string
