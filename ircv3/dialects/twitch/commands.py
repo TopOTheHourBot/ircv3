@@ -54,28 +54,19 @@ class User:
 
     @property
     def mod(self) -> int:
-        """The user's moderator status
-
-        True if the user is a moderator, otherwise false.
-        """
+        """True if the user is a moderator, otherwise false"""
         value = self._tags.get("mod")
         assert value is not None
         return int(value)
 
     @property
     def vip(self) -> int:
-        """The user's VIP status
-
-        True if the user is a VIP, otherwise false.
-        """
+        """True if the user is a VIP, otherwise false"""
         return "vip" in self._tags  # Presence indicates they're a VIP
 
     @property
     def sub(self) -> int:
-        """The user's subscription status
-
-        True if the user is a subscriber, otherwise false.
-        """
+        """True if the user is a subscriber, otherwise false"""
         value = self._tags.get("subscriber")
         assert value is not None
         return int(value)
