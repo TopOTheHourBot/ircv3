@@ -12,14 +12,7 @@ from ...protocols import IRCv3CommandProtocol
 class User:
 
     __slots__ = ("_tags", "_source")
-    __match_args__ = (
-        "id",
-        "name",
-        "color",
-        "mod",
-        "vip",
-        "sub",
-    )
+    __match_args__ = ("id", "name", "color", "mod", "vip", "sub")
     _tags: Mapping[str, str]
     _source: str
 
@@ -92,6 +85,7 @@ class User:
 class Privmsg(IRCv3CommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
+    __match_args__ = ("room", "comment", "tags", "source")
     _room: str
     _comment: str
     _tags: Optional[Mapping[str, str]]
