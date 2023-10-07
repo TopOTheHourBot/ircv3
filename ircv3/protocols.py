@@ -26,6 +26,7 @@ class IRCv3CommandProtocol(Protocol):
     @abstractmethod
     def name(self) -> str:
         """The command's name"""
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -34,18 +35,22 @@ class IRCv3CommandProtocol(Protocol):
 
         Note that this does not include the commentary (AKA trailing) argument.
         """
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def comment(self) -> Optional[str]:
         """The command's commentary argument"""
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def tags(self) -> Optional[Mapping[str, str]]:
         """The command's tags"""
+        raise NotImplementedError
 
     @property
     @abstractmethod
     def source(self) -> Optional[str]:
         """The command's source"""
+        raise NotImplementedError
