@@ -3,6 +3,7 @@ from __future__ import annotations
 __all__ = [
     "User",
     "Privmsg",
+    "Join",
 ]
 
 from collections.abc import Mapping
@@ -181,3 +182,43 @@ class Privmsg(IRCv3CommandProtocol):
         if id is None:
             return Privmsg(self.room, f"@{self.author} {comment}")
         return Privmsg(self.room, comment, tags={"reply-parent-msg-id": id})
+
+
+@final
+class Join(IRCv3CommandProtocol):
+
+    __slots__ = ("_rooms", "_source")
+    _rooms: tuple[str, ...]
+    _source: Optional[str]
+    name: Literal["JOIN"] = "JOIN"
+    comment: None = None
+    tags: None = None
+
+    def __init__(self, *rooms: str, source: Optional[str] = None) -> None:
+        self._rooms = rooms
+        self._source = source
+
+    @property
+    def arguments(self) -> tuple[str]:
+        return (",".join(self.rooms),)
+
+    @property
+    def source(self) -> Optional[str]:
+        return self._source
+
+    @property
+    def rooms(self) -> tuple[str, ...]:
+        """The rooms to join"""
+        return self._rooms
+
+    @classmethod
+    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``Join`` instance"""
+        assert command.name == "JOIN"
+        assert len(command.arguments) == 1
+        assert command.comment is None
+        assert command.tags is None
+        return cls(
+            *command.arguments[0],
+            source=command.source,
+        )
