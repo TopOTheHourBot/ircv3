@@ -7,11 +7,11 @@ __all__ = [
 ]
 
 from collections.abc import Mapping
-from typing import Literal, Optional, Self, final
+from typing import Final, Literal, Optional, Self, final
 
 from ...protocols import IRCv3CommandProtocol
 
-MIN_NAME_SIZE: Literal[3] = 3  #: Size of the shortest possible Twitch name
+MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name
 
 
 @final
