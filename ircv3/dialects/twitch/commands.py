@@ -2,12 +2,15 @@ from __future__ import annotations
 
 __all__ = [
     "User",
-    "Privmsg",
-    "Join",
+    "ClientPrivmsg",
+    "ServerPrivmsg",
+    "ClientJoin",
+    "ServerJoin",
 ]
 
-from collections.abc import Mapping
-from typing import Final, Literal, Optional, Self, final
+from abc import abstractmethod
+from collections.abc import Mapping, Sequence
+from typing import Final, Literal, Optional, Protocol, Self, final
 
 from ...protocols import IRCv3CommandProtocol
 
@@ -78,33 +81,39 @@ class User:
         return not not int(value)
 
 
-@final
-class Privmsg(IRCv3CommandProtocol):
+class PrivmsgProtocol(IRCv3CommandProtocol, Protocol):
 
-    __slots__ = ("_room", "_comment", "_tags", "_source")
-    __match_args__ = ("room", "comment", "tags", "source")
-    _room: str
-    _comment: str
-    _tags: Optional[Mapping[str, str]]
-    _source: Optional[str]
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
-
-    def __init__(
-        self,
-        room: str,
-        comment: str,
-        *,
-        tags: Optional[Mapping[str, str]] = None,
-        source: Optional[str] = None,
-    ) -> None:
-        self._room = room
-        self._comment = comment
-        self._tags = tags
-        self._source = source
 
     @property
     def arguments(self) -> tuple[str]:
         return (self.room,)
+
+    @property
+    @abstractmethod
+    def comment(self) -> str:  # No longer optional
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
+    def room(self) -> str:
+        """The room this message was sent to"""
+        raise NotImplementedError
+
+
+@final
+class ClientPrivmsg(PrivmsgProtocol):
+
+    __slots__ = ("_room", "_comment", "_tags")
+    _room: str
+    _comment: str
+    _tags: Optional[Mapping[str, str]]
+    source: Final[None] = None
+
+    def __init__(self, room: str, comment: str, *, tags: Optional[Mapping[str, str]] = None) -> None:
+        self._room = room
+        self._comment = comment
+        self._tags = tags
 
     @property
     def comment(self) -> str:
@@ -115,12 +124,39 @@ class Privmsg(IRCv3CommandProtocol):
         return self._tags
 
     @property
-    def source(self) -> Optional[str]:
+    def room(self) -> str:
+        return self._room
+
+
+@final
+class ServerPrivmsg(PrivmsgProtocol):
+
+    __slots__ = ("_room", "_comment", "_tags", "_source")
+    _room: str
+    _comment: str
+    _tags: Optional[Mapping[str, str]]
+    _source: str
+
+    def __init__(self, room: str, comment: str, *, tags: Optional[Mapping[str, str]] = None, source: str) -> None:
+        self._room = room
+        self._comment = comment
+        self._tags = tags
+        self._source = source
+
+    @property
+    def comment(self) -> str:
+        return self._comment
+
+    @property
+    def tags(self) -> Optional[Mapping[str, str]]:
+        return self._tags
+
+    @property
+    def source(self) -> str:
         return self._source
 
     @property
     def room(self) -> str:
-        """The room this message was sent to"""
         return self._room
 
     @property
@@ -153,17 +189,17 @@ class Privmsg(IRCv3CommandProtocol):
         """
         source = self.source
         tags = self.tags
-        assert source is not None
         if tags is None:
             return source[:source.find("!", MIN_NAME_SIZE)]
         return User(tags, source)
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
-        """Reinterpret ``command`` as a new ``Privmsg`` instance"""
+        """Reinterpret ``command`` as a new ``ServerPrivmsg`` instance"""
         assert command.name == "PRIVMSG"
         assert len(command.arguments) == 1
         assert command.comment is not None
+        assert command.source is not None
         return cls(
             command.arguments[0],
             command.comment,
@@ -171,8 +207,8 @@ class Privmsg(IRCv3CommandProtocol):
             source=command.source,
         )
 
-    def reply(self, comment: str) -> Privmsg:
-        """Return a new ``Privmsg`` in reply to this message
+    def reply(self, comment: str) -> ClientPrivmsg:
+        """Return a new ``ClientPrivmsg`` in reply to this message
 
         Uses the tag-based reply system provided by the Twitch server if the
         message is tagged, otherwise begins ``comment`` by at-mentioning the
@@ -180,44 +216,72 @@ class Privmsg(IRCv3CommandProtocol):
         """
         id = self.id
         if id is None:
-            return Privmsg(self.room, f"@{self.author} {comment}")
-        return Privmsg(self.room, comment, tags={"reply-parent-msg-id": id})
+            comment = f"@{self.author} {comment}"
+            tags = None
+        else:
+            tags = {"reply-parent-msg-id": id}
+        return ClientPrivmsg(self.room, comment, tags=tags)
 
 
-@final
-class Join(IRCv3CommandProtocol):
+class JoinProtocol(IRCv3CommandProtocol, Protocol):
 
-    __slots__ = ("_rooms", "_source")
-    _rooms: tuple[str, ...]
-    _source: Optional[str]
     name: Final[Literal["JOIN"]] = "JOIN"
     comment: Final[None] = None
     tags: Final[None] = None
-
-    def __init__(self, *rooms: str, source: Optional[str] = None) -> None:
-        self._rooms = rooms
-        self._source = source
 
     @property
     def arguments(self) -> tuple[str]:
         return (",".join(self.rooms),)
 
     @property
-    def source(self) -> Optional[str]:
-        return self._source
+    @abstractmethod
+    def rooms(self) -> Sequence[str]:
+        """The rooms to join"""
+        raise NotImplementedError
+
+
+@final
+class ClientJoin(JoinProtocol):
+
+    __slots__ = ("_rooms")
+    _rooms: tuple[str, ...]
+    source: Final[None] = None
+
+    def __init__(self, *rooms: str) -> None:
+        self._rooms = rooms
 
     @property
     def rooms(self) -> tuple[str, ...]:
-        """The rooms to join"""
         return self._rooms
+
+
+@final
+class ServerJoin(JoinProtocol):
+
+    __slots__ = ("_rooms", "_source")
+    _rooms: tuple[str, ...]
+    _source: str
+
+    def __init__(self, *rooms: str, source: str) -> None:
+        self._rooms = rooms
+        self._source = source
+
+    @property
+    def rooms(self) -> tuple[str, ...]:
+        return self._rooms
+
+    @property
+    def source(self) -> str:
+        return self._source
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
-        """Reinterpret ``command`` as a new ``Join`` instance"""
+        """Reinterpret ``command`` as a new ``ServerJoin`` instance"""
         assert command.name == "JOIN"
         assert len(command.arguments) == 1
         assert command.comment is None
         assert command.tags is None
+        assert command.source is not None
         return cls(
             *command.arguments[0],
             source=command.source,

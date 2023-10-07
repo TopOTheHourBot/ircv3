@@ -4,9 +4,9 @@ __all__ = ["is_privmsg"]
 
 from typing import TypeGuard
 
-from .commands import Privmsg
+from .commands import ServerPrivmsg
 
 
-def is_privmsg(value: object, /) -> TypeGuard[Privmsg]:
-    """Return true if ``value`` is a ``Privmsg``, otherwise false"""
-    return type(value) is Privmsg  # Exact type check is faster for negative tests
+def is_privmsg(value: object, /) -> TypeGuard[ServerPrivmsg]:
+    """Return true if ``value`` is a ``ServerPrivmsg``, otherwise false"""
+    return type(value) is ServerPrivmsg  # Exact type check is faster for negative tests
