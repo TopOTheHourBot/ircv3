@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-__all__ = ["Privmsg"]
+__all__ = [
+    "User",
+    "Privmsg",
+]
 
 from collections.abc import Mapping
 from typing import Literal, Optional, Self, final
 
 from ...protocols import IRCv3CommandProtocol
+
+MIN_NAME_SIZE: Literal[3] = 3  #: Size of the shortest possible Twitch name
 
 
 @final
@@ -39,7 +44,7 @@ class User:
         value = self._tags.get("display-name")
         if not value:
             source = self._source
-            return source[1:source.find("!", 4)]
+            return source[:source.find("!", MIN_NAME_SIZE)]
         return value
 
     @property
@@ -53,23 +58,23 @@ class User:
         return value or None
 
     @property
-    def mod(self) -> int:
+    def mod(self) -> bool:
         """True if the user is a moderator, otherwise false"""
         value = self._tags.get("mod")
         assert value is not None
-        return int(value)
+        return not not int(value)
 
     @property
-    def vip(self) -> int:
+    def vip(self) -> bool:
         """True if the user is a VIP, otherwise false"""
         return "vip" in self._tags  # Presence indicates they're a VIP
 
     @property
-    def sub(self) -> int:
+    def sub(self) -> bool:
         """True if the user is a subscriber, otherwise false"""
         value = self._tags.get("subscriber")
         assert value is not None
-        return int(value)
+        return not not int(value)
 
 
 @final
@@ -149,7 +154,7 @@ class Privmsg(IRCv3CommandProtocol):
         tags = self.tags
         assert source is not None
         if tags is None:
-            return source[1:source.find("!", 4)]
+            return source[:source.find("!", MIN_NAME_SIZE)]
         return User(tags, source)
 
     @classmethod
