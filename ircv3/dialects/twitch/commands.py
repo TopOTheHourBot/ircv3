@@ -87,7 +87,7 @@ class Privmsg(IRCv3CommandProtocol):
     _comment: str
     _tags: Optional[Mapping[str, str]]
     _source: Optional[str]
-    name: Literal["PRIVMSG"] = "PRIVMSG"
+    name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
     def __init__(
         self,
@@ -190,9 +190,9 @@ class Join(IRCv3CommandProtocol):
     __slots__ = ("_rooms", "_source")
     _rooms: tuple[str, ...]
     _source: Optional[str]
-    name: Literal["JOIN"] = "JOIN"
-    comment: None = None
-    tags: None = None
+    name: Final[Literal["JOIN"]] = "JOIN"
+    comment: Final[None] = None
+    tags: Final[None] = None
 
     def __init__(self, *rooms: str, source: Optional[str] = None) -> None:
         self._rooms = rooms
