@@ -283,6 +283,6 @@ class ServerJoin(JoinProtocol):
         assert command.tags is None
         assert command.source is not None
         return cls(
-            *command.arguments[0],
+            *command.arguments[0].split(","),
             source=command.source,
         )
