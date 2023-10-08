@@ -12,14 +12,14 @@ class IRCv3CommandProtocol(Protocol):
 
     def __str__(self) -> str:
         parts = []
-        if self.tags is not None:
-            parts.append("@" + ";".join(itertools.starmap(lambda label, value: f"{label}={value}", self.tags.items())))
-        if self.source is not None:
-            parts.append(":" + self.source)
+        if (tags := self.tags) is not None:
+            parts.append("@" + ";".join(itertools.starmap(lambda label, value: f"{label}={value}", tags.items())))
+        if (source := self.source) is not None:
+            parts.append(":" + source)
         parts.append(self.name)
         parts.extend(self.arguments)
-        if self.comment is not None:
-            parts.append(":" + self.comment)
+        if (comment := self.comment) is not None:
+            parts.append(":" + comment)
         return " ".join(parts)
 
     @property
