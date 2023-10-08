@@ -6,6 +6,7 @@ __all__ = [
     "ServerPrivmsg",
     "ClientJoin",
     "ServerJoin",
+    "Ping",
 ]
 
 from abc import abstractmethod
@@ -286,3 +287,31 @@ class ServerJoin(JoinProtocol):
             *command.arguments[0].split(","),
             source=command.source,
         )
+
+
+@final
+class Ping(IRCv3CommandProtocol):
+
+    __slots__ = ("_comment")
+    _comment: str
+    name: Final[Literal["PING"]] = "PING"
+    arguments: Final[tuple[()]] = ()
+    tags: Final[None] = None
+    source: Final[None] = None
+
+    def __init__(self, comment: str) -> None:
+        self._comment = comment
+
+    @property
+    def comment(self) -> str:
+        return self._comment
+
+    @classmethod
+    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``Ping`` instance"""
+        assert command.name == "PING"
+        assert len(command.arguments) == 0
+        assert command.comment is not None
+        assert command.tags is None
+        assert command.source is None
+        return cls(command.comment)
