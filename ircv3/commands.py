@@ -70,7 +70,7 @@ class IRCv3Command(IRCv3CommandProtocol):
     @classmethod
     def from_string(cls, string: str, /) -> Self:
         """Return a new command from a raw data string"""
-        parser = Parser(string)
+        parser = Parser(string.rstrip("\r\n"))
 
         if parser.peek() == "@":
             tags = {
