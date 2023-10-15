@@ -8,6 +8,7 @@ __all__ = [
     "ServerJoin",
     "Ping",
     "Pong",
+    "RoomState",
 ]
 
 from abc import abstractmethod
@@ -38,9 +39,7 @@ class User:
     @property
     def id(self) -> str:
         """The user's identifier"""
-        value = self._tags.get("user-id")
-        assert value is not None
-        return value
+        return self._tags["user-id"]
 
     @property
     def name(self) -> str:
@@ -60,16 +59,12 @@ class User:
 
         ``None`` if the user has not set a name color.
         """
-        value = self._tags.get("color")
-        assert value is not None
-        return value or None
+        return self._tags["color"] or None
 
     @property
     def mod(self) -> bool:
         """True if the user is a moderator, otherwise false"""
-        value = self._tags.get("mod")
-        assert value is not None
-        return not not int(value)
+        return not not int(self._tags["mod"])
 
     @property
     def vip(self) -> bool:
@@ -79,9 +74,7 @@ class User:
     @property
     def sub(self) -> bool:
         """True if the user is a subscriber, otherwise false"""
-        value = self._tags.get("subscriber")
-        assert value is not None
-        return not not int(value)
+        return not not int(self._tags["subscriber"])
 
 
 class PrivmsgProtocol(IRCv3CommandProtocol, Protocol):
@@ -142,10 +135,10 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
     __slots__ = ("_room", "_comment", "_tags", "_source")
     _room: str
     _comment: str
-    _tags: Optional[Mapping[str, str]]
+    _tags: Mapping[str, str]
     _source: str
 
-    def __init__(self, room: str, comment: str, *, tags: Optional[Mapping[str, str]] = None, source: str) -> None:
+    def __init__(self, room: str, comment: str, *, tags: Mapping[str, str], source: str) -> None:
         self._room = room
         self._comment = comment
         self._tags = tags
@@ -158,7 +151,7 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
 
     @property
     @override
-    def tags(self) -> Optional[Mapping[str, str]]:
+    def tags(self) -> Mapping[str, str]:
         return self._tags
 
     @property
@@ -172,38 +165,19 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
         return self._room
 
     @property
-    def id(self) -> Optional[str]:
-        """The message's identifier
-
-        ``None`` if the message is untagged.
-        """
-        tags = self.tags or {}
-        return tags.get("id")
+    def id(self) -> str:
+        """The message's identifier"""
+        return self.tags["id"]
 
     @property
-    def timestamp(self) -> Optional[int]:
-        """The time at which the message was sent
-
-        ``None`` if the message is untagged.
-        """
-        tags = self.tags or {}
-        value = tags.get("tmi-sent-ts")
-        if value is None:
-            return
-        return int(value)
+    def timestamp(self) -> int:
+        """The time at which the message was sent"""
+        return int(self.tags["tmi-sent-ts"])
 
     @property
-    def author(self) -> User | str:
-        """The message's author
-
-        The author's IRC name if the message is untagged, otherwise an instance
-        of ``User``.
-        """
-        source = self.source
-        tags = self.tags
-        if tags is None:
-            return source[:source.find("!", MIN_NAME_SIZE)]
-        return User(tags, source)
+    def author(self) -> User:
+        """The message's author"""
+        return User(self.tags, self.source)
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
@@ -212,6 +186,7 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
         assert len(command.arguments) == 1
         assert command.comment is not None
         assert command.source is not None
+        assert command.tags is not None
         return cls(
             command.arguments[0],
             command.comment,
@@ -220,19 +195,12 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
         )
 
     def reply(self, comment: str) -> ClientPrivmsg:
-        """Return a new ``ClientPrivmsg`` in reply to this message
-
-        Uses the tag-based reply system provided by the Twitch server if the
-        message is tagged, otherwise begins ``comment`` by at-mentioning the
-        user with their IRC name.
-        """
-        id = self.id
-        if id is None:
-            comment = f"@{self.author} {comment}"
-            tags = None
-        else:
-            tags = {"reply-parent-msg-id": id}
-        return ClientPrivmsg(self.room, comment, tags=tags)
+        """Return a new ``ClientPrivmsg`` in reply to this message"""
+        return ClientPrivmsg(
+            self.room,
+            comment,
+            tags={"reply-parent-msg-id": self.id},
+        )
 
 
 class JoinProtocol(IRCv3CommandProtocol, Protocol):
@@ -361,3 +329,48 @@ class Ping(PingPongProtocol):
     def reply(self) -> Pong:
         """Return a new ``Pong`` in reply to this ping"""
         return Pong(self.comment)
+
+
+@final
+class RoomState(IRCv3ServerCommandProtocol):
+
+    __slots__ = ("_room", "_tags", "_source")
+    _room: str
+    _tags: Mapping[str, str]
+    _source: str
+    name: Final[Literal["ROOMSTATE"]] = "ROOMSTATE"
+    comment: Final[None] = None
+
+    def __init__(self, room: str, *, tags: Mapping[str, str], source: str) -> None:
+        self._room = room
+        self._tags = tags
+        self._source = source
+
+    @property
+    @override
+    def arguments(self) -> tuple[str]:
+        return (self.room,)
+
+    @property
+    @override
+    def tags(self) -> Mapping[str, str]:
+        return self._tags
+
+    @property
+    @override
+    def source(self) -> str:
+        return self._source
+
+    @property
+    def room(self) -> str:
+        """The room this state pertains to"""
+        return self._room
+
+    @property
+    def delay(self) -> int:
+        """The amount of time, in seconds, for which subsequent messages are
+        allowed to be sent to the room
+
+        Also known as "slow mode" in the Twitch moderator interface.
+        """
+        return int(self.tags["slow"])
