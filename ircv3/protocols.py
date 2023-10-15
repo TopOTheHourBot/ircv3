@@ -18,6 +18,7 @@ from typing import Literal, Optional, Protocol, override
 class Side(Flag):
     CLIENT = enum.auto()
     SERVER = enum.auto()
+    COMMON = CLIENT | SERVER
 
 
 class IRCv3CommandProtocol(Protocol):
@@ -68,13 +69,12 @@ class IRCv3CommandProtocol(Protocol):
         raise NotImplementedError
 
     @property
-    def side(self) -> Optional[Side]:
+    def side(self) -> Side:
         """The command's side
 
-        If ``None`` (the default), the command may be sent by either the client
-        or server.
+        ``Side.COMMON`` by default.
         """
-        return
+        return Side.COMMON
 
 
 class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, Protocol):
