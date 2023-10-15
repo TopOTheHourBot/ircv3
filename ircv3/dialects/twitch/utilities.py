@@ -7,12 +7,14 @@ __all__ = [
     "is_server_join",
     "is_ping",
     "is_pong",
+    "is_room_state",
+    "is_local",
 ]
 
 from typing import TypeGuard
 
-from .commands import (ClientJoin, ClientPrivmsg, Ping, Pong, ServerJoin,
-                       ServerPrivmsg)
+from .commands import (ClientJoin, ClientPrivmsg, Ping, Pong, RoomState,
+                       ServerJoin, ServerPrivmsg)
 
 
 def is_client_privmsg(value: object, /) -> TypeGuard[ClientPrivmsg]:
@@ -43,3 +45,17 @@ def is_ping(value: object, /) -> TypeGuard[Ping]:
 def is_pong(value: object, /) -> TypeGuard[Pong]:
     """Return true if ``value`` is a ``Pong``, otherwise false"""
     return type(value) is Pong
+
+
+def is_room_state(value: object, /) -> TypeGuard[RoomState]:
+    """Return true if ``value`` is a ``RoomState``, otherwise false"""
+    return type(value) is RoomState
+
+
+def is_local(value: object, /) -> TypeGuard[ClientPrivmsg | ServerPrivmsg | RoomState]:
+    """Return true if ``value`` is a command local to one room, otherwise false"""
+    return type(value) in {
+        ClientPrivmsg,
+        ServerPrivmsg,
+        RoomState,
+    }
