@@ -14,7 +14,8 @@ from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from typing import Final, Literal, Optional, Protocol, Self, final, override
 
-from ...protocols import IRCv3CommandProtocol
+from ...protocols import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
+                          IRCv3ServerCommandProtocol)
 
 MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name
 
@@ -106,7 +107,7 @@ class PrivmsgProtocol(IRCv3CommandProtocol, Protocol):
 
 
 @final
-class ClientPrivmsg(PrivmsgProtocol):
+class ClientPrivmsg(IRCv3ClientCommandProtocol, PrivmsgProtocol):
 
     __slots__ = ("_room", "_comment", "_tags")
     _room: str
@@ -136,7 +137,7 @@ class ClientPrivmsg(PrivmsgProtocol):
 
 
 @final
-class ServerPrivmsg(PrivmsgProtocol):
+class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
     _room: str
@@ -253,7 +254,7 @@ class JoinProtocol(IRCv3CommandProtocol, Protocol):
 
 
 @final
-class ClientJoin(JoinProtocol):
+class ClientJoin(IRCv3ClientCommandProtocol, JoinProtocol):
 
     __slots__ = ("_rooms")
     _rooms: tuple[str, ...]
@@ -269,7 +270,7 @@ class ClientJoin(JoinProtocol):
 
 
 @final
-class ServerJoin(JoinProtocol):
+class ServerJoin(IRCv3ServerCommandProtocol, JoinProtocol):
 
     __slots__ = ("_rooms", "_source")
     _rooms: tuple[str, ...]

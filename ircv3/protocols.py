@@ -1,11 +1,23 @@
 from __future__ import annotations
 
-__all__ = ["IRCv3CommandProtocol"]
+__all__ = [
+    "Side",
+    "IRCv3CommandProtocol",
+    "IRCv3ClientCommandProtocol",
+    "IRCv3ServerCommandProtocol",
+]
 
+import enum
 import itertools
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import Optional, Protocol
+from enum import Flag
+from typing import Literal, Optional, Protocol, override
+
+
+class Side(Flag):
+    CLIENT = enum.auto()
+    SERVER = enum.auto()
 
 
 class IRCv3CommandProtocol(Protocol):
@@ -54,3 +66,28 @@ class IRCv3CommandProtocol(Protocol):
     def source(self) -> Optional[str]:
         """The command's source"""
         raise NotImplementedError
+
+    @property
+    def side(self) -> Optional[Side]:
+        """The command's side
+
+        If ``None`` (the default), the command may be sent by either the client
+        or server.
+        """
+        return
+
+
+class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, Protocol):
+
+    @property
+    @override
+    def side(self) -> Literal[Side.CLIENT]:
+        return Side.CLIENT
+
+
+class IRCv3ServerCommandProtocol(IRCv3CommandProtocol, Protocol):
+
+    @property
+    @override
+    def side(self) -> Literal[Side.SERVER]:
+        return Side.SERVER
