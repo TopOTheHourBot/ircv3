@@ -7,11 +7,12 @@ __all__ = [
     "ClientJoin",
     "ServerJoin",
     "Ping",
+    "Pong",
 ]
 
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import Final, Literal, Optional, Protocol, Self, final
+from typing import Final, Literal, Optional, Protocol, Self, final, override
 
 from ...protocols import IRCv3CommandProtocol
 
@@ -87,10 +88,12 @@ class PrivmsgProtocol(IRCv3CommandProtocol, Protocol):
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
     @property
+    @override
     def arguments(self) -> tuple[str]:
         return (self.room,)
 
     @property
+    @override
     @abstractmethod
     def comment(self) -> str:  # No longer optional
         raise NotImplementedError
@@ -117,14 +120,17 @@ class ClientPrivmsg(PrivmsgProtocol):
         self._tags = tags
 
     @property
+    @override
     def comment(self) -> str:
         return self._comment
 
     @property
+    @override
     def tags(self) -> Optional[Mapping[str, str]]:
         return self._tags
 
     @property
+    @override
     def room(self) -> str:
         return self._room
 
@@ -145,18 +151,22 @@ class ServerPrivmsg(PrivmsgProtocol):
         self._source = source
 
     @property
+    @override
     def comment(self) -> str:
         return self._comment
 
     @property
+    @override
     def tags(self) -> Optional[Mapping[str, str]]:
         return self._tags
 
     @property
+    @override
     def source(self) -> str:
         return self._source
 
     @property
+    @override
     def room(self) -> str:
         return self._room
 
@@ -231,6 +241,7 @@ class JoinProtocol(IRCv3CommandProtocol, Protocol):
     tags: Final[None] = None
 
     @property
+    @override
     def arguments(self) -> tuple[str]:
         return (",".join(self.rooms),)
 
@@ -252,6 +263,7 @@ class ClientJoin(JoinProtocol):
         self._rooms = rooms
 
     @property
+    @override
     def rooms(self) -> tuple[str, ...]:
         return self._rooms
 
@@ -268,10 +280,12 @@ class ServerJoin(JoinProtocol):
         self._source = source
 
     @property
+    @override
     def rooms(self) -> tuple[str, ...]:
         return self._rooms
 
     @property
+    @override
     def source(self) -> str:
         return self._source
 
@@ -289,20 +303,47 @@ class ServerJoin(JoinProtocol):
         )
 
 
-@final
-class Ping(IRCv3CommandProtocol):
+class PingPongProtocol(IRCv3CommandProtocol, Protocol):
 
-    __slots__ = ("_comment")
-    _comment: str
-    name: Final[Literal["PING"]] = "PING"
     arguments: Final[tuple[()]] = ()
     tags: Final[None] = None
     source: Final[None] = None
+
+    @property
+    @override
+    @abstractmethod
+    def comment(self) -> str:  # No longer optional
+        raise NotImplementedError
+
+
+@final
+class Pong(PingPongProtocol):
+
+    __slots__ = ("_comment")
+    _comment: str
+    name: Final[Literal["PONG"]] = "PONG"
 
     def __init__(self, comment: str) -> None:
         self._comment = comment
 
     @property
+    @override
+    def comment(self) -> str:
+        return self._comment
+
+
+@final
+class Ping(PingPongProtocol):
+
+    __slots__ = ("_comment")
+    _comment: str
+    name: Final[Literal["PING"]] = "PING"
+
+    def __init__(self, comment: str) -> None:
+        self._comment = comment
+
+    @property
+    @override
     def comment(self) -> str:
         return self._comment
 
@@ -315,3 +356,7 @@ class Ping(IRCv3CommandProtocol):
         assert command.tags is None
         assert command.source is None
         return cls(command.comment)
+
+    def reply(self) -> Pong:
+        """Return a new ``Pong`` in reply to this ping"""
+        return Pong(self.comment)

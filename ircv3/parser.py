@@ -2,9 +2,7 @@ from __future__ import annotations
 
 __all__ = ["Parser"]
 
-from typing import Self, TypeVar, final
-
-DefaultT = TypeVar("DefaultT")
+from typing import Self, final
 
 
 @final
@@ -21,7 +19,7 @@ class Parser:
 
     def __init__(self, subject: str, *, index: int = 0) -> None:
         self._subject = subject
-        self._index   = index
+        self._index = index
 
     def __repr__(self) -> str:
         return f"Parser(subject={self._subject!r}, index={self._index!r})"
@@ -47,7 +45,7 @@ class Parser:
         self._index += steps
         return self
 
-    def peek(self, default: DefaultT = None) -> str | DefaultT:
+    def peek[T](self, default: T = None) -> str | T:
         """Return the value at the current index, or ``default`` if the index
         is out of range
 
