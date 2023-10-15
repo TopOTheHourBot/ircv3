@@ -9,7 +9,7 @@ Simple [IRCv3](https://ircv3.net/irc/) command APIs.
 This library is available through [local](https://pip.pypa.io/en/stable/topics/local-project-installs/) or [VCS](https://pip.pypa.io/en/stable/topics/vcs-support/) installation only. VCS installation is recommended:
 
 ```
-pip install git+https://github.com/TopOTheHourBot/ircv3.git
+pip install git+https://github.com/TopOTheHourBot/ircv3.git --force-reinstall
 ```
 
 This will build and deploy the library onto your local system as if it were a library installed from PyPI. This library is knowingly unavailable through PyPI so as to discourage its use in production code.
