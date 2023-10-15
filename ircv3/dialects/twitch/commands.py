@@ -367,10 +367,14 @@ class RoomState(IRCv3ServerCommandProtocol):
         return self._room
 
     @property
-    def delay(self) -> int:
+    def delay(self) -> Optional[int]:
         """The amount of time, in seconds, for which subsequent messages are
         allowed to be sent to the room
 
-        Also known as "slow mode" in the Twitch moderator interface.
+        Also known as "slow mode" in the Twitch moderator interface. ``None``
+        if the delay has not been changed.
         """
-        return int(self.tags["slow"])
+        delay = self.tags.get("slow")
+        if delay is None:
+            return
+        return int(delay)
