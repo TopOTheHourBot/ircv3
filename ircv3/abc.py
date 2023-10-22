@@ -3,16 +3,17 @@ from __future__ import annotations
 __all__ = [
     "Side",
     "IRCv3CommandProtocol",
+    "IRCv3CommonCommandProtocol",
     "IRCv3ClientCommandProtocol",
     "IRCv3ServerCommandProtocol",
 ]
 
 import enum
 import itertools
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Flag
-from typing import Literal, Optional, Protocol, override
+from typing import Literal, Optional, override
 
 
 class Side(Flag):
@@ -21,7 +22,7 @@ class Side(Flag):
     COMMON = CLIENT | SERVER
 
 
-class IRCv3CommandProtocol(Protocol):
+class IRCv3CommandProtocol(metaclass=ABCMeta):
 
     def __str__(self) -> str:
         parts = []
@@ -69,15 +70,20 @@ class IRCv3CommandProtocol(Protocol):
         raise NotImplementedError
 
     @property
-    def side(self) -> Side:
-        """The command's side
+    def side(self) -> Optional[Side]:
+        """The command's side"""
+        return
 
-        ``Side.COMMON`` by default.
-        """
+
+class IRCv3CommonCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
+
+    @property
+    @override
+    def side(self) -> Literal[Side.COMMON]:
         return Side.COMMON
 
 
-class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, Protocol):
+class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     @property
     @override
@@ -85,7 +91,7 @@ class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, Protocol):
         return Side.CLIENT
 
 
-class IRCv3ServerCommandProtocol(IRCv3CommandProtocol, Protocol):
+class IRCv3ServerCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     @property
     @override

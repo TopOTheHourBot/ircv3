@@ -5,8 +5,8 @@ __all__ = ["IRCv3Command"]
 from collections.abc import Mapping, Sequence
 from typing import Optional, Self, final
 
+from .abc import IRCv3CommandProtocol
 from .parser import Parser
-from .protocols import IRCv3CommandProtocol
 
 
 @final

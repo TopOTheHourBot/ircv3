@@ -11,12 +11,12 @@ __all__ = [
     "RoomState",
 ]
 
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import Final, Literal, Optional, Protocol, Self, final, override
+from typing import Final, Literal, Optional, Self, final, override
 
-from ...protocols import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
-                          IRCv3ServerCommandProtocol)
+from ...abc import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
+                    IRCv3ServerCommandProtocol)
 
 MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name
 
@@ -77,7 +77,7 @@ class User:
         return not not int(self._tags["subscriber"])
 
 
-class PrivmsgProtocol(IRCv3CommandProtocol, Protocol):
+class PrivmsgProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
@@ -203,7 +203,7 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
         )
 
 
-class JoinProtocol(IRCv3CommandProtocol, Protocol):
+class JoinProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["JOIN"]] = "JOIN"
     comment: Final[None] = None
@@ -272,7 +272,7 @@ class ServerJoin(IRCv3ServerCommandProtocol, JoinProtocol):
         )
 
 
-class PingPongProtocol(IRCv3CommandProtocol, Protocol):
+class PingPongProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     arguments: Final[tuple[()]] = ()
     tags: Final[None] = None
@@ -286,7 +286,7 @@ class PingPongProtocol(IRCv3CommandProtocol, Protocol):
 
 
 @final
-class Pong(PingPongProtocol):
+class Pong(IRCv3ClientCommandProtocol, PingPongProtocol):
 
     __slots__ = ("_comment")
     _comment: str
@@ -302,7 +302,7 @@ class Pong(PingPongProtocol):
 
 
 @final
-class Ping(PingPongProtocol):
+class Ping(IRCv3ServerCommandProtocol, PingPongProtocol):
 
     __slots__ = ("_comment")
     _comment: str
