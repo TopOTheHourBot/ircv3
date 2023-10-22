@@ -1,15 +1,20 @@
 from __future__ import annotations
 
-__all__ = ["IRCv3Command"]
+__all__ = [
+    "IRCv3Command",
+    "IRCv3CommonCommand",
+    "IRCv3ClientCommand",
+    "IRCv3ServerCommand",
+]
 
 from collections.abc import Mapping, Sequence
-from typing import Optional, Self, final
+from typing import Optional, Self
 
-from .abc import IRCv3CommandProtocol
+from .abc import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
+                  IRCv3CommonCommandProtocol, IRCv3ServerCommandProtocol)
 from .parser import Parser
 
 
-@final
 class IRCv3Command(IRCv3CommandProtocol):
 
     __slots__ = (
@@ -105,3 +110,18 @@ class IRCv3Command(IRCv3CommandProtocol):
             tags=tags,
             source=source,
         )
+
+
+class IRCv3CommonCommand(IRCv3Command, IRCv3CommonCommandProtocol):
+
+    __slots__ = ()
+
+
+class IRCv3ClientCommand(IRCv3Command, IRCv3ClientCommandProtocol):
+
+    __slots__ = ()
+
+
+class IRCv3ServerCommand(IRCv3Command, IRCv3ServerCommandProtocol):
+
+    __slots__ = ()
