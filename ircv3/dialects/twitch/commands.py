@@ -2,8 +2,8 @@ from __future__ import annotations
 
 __all__ = [
     "User",
-    "ClientPrivmsg",
-    "ServerPrivmsg",
+    "ClientPrivateMessage",
+    "ServerPrivateMessage",
     "ClientJoin",
     "ServerJoin",
     "Ping",
@@ -77,7 +77,7 @@ class User:
         return not not int(self._tags["subscriber"])
 
 
-class PrivmsgProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
+class CommonPrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
@@ -100,7 +100,7 @@ class PrivmsgProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientPrivmsg(IRCv3ClientCommandProtocol, PrivmsgProtocol):
+class ClientPrivateMessage(IRCv3ClientCommandProtocol, CommonPrivateMessage):
 
     __slots__ = ("_room", "_comment", "_tags")
     _room: str
@@ -130,7 +130,7 @@ class ClientPrivmsg(IRCv3ClientCommandProtocol, PrivmsgProtocol):
 
 
 @final
-class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
+class ServerPrivateMessage(IRCv3ServerCommandProtocol, CommonPrivateMessage):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
     _room: str
@@ -181,7 +181,7 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
-        """Reinterpret ``command`` as a new ``ServerPrivmsg`` instance"""
+        """Reinterpret ``command`` as a new ``ServerPrivateMessage`` instance"""
         assert command.name == "PRIVMSG"
         assert len(command.arguments) == 1
         assert command.comment is not None
@@ -194,16 +194,16 @@ class ServerPrivmsg(IRCv3ServerCommandProtocol, PrivmsgProtocol):
             source=command.source,
         )
 
-    def reply(self, comment: str) -> ClientPrivmsg:
-        """Return a new ``ClientPrivmsg`` in reply to this message"""
-        return ClientPrivmsg(
+    def reply(self, comment: str) -> ClientPrivateMessage:
+        """Return a new ``ClientPrivateMessage`` in reply to this message"""
+        return ClientPrivateMessage(
             self.room,
             comment,
             tags={"reply-parent-msg-id": self.id},
         )
 
 
-class JoinProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
+class CommonJoin(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["JOIN"]] = "JOIN"
     comment: Final[None] = None
@@ -222,7 +222,7 @@ class JoinProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientJoin(IRCv3ClientCommandProtocol, JoinProtocol):
+class ClientJoin(IRCv3ClientCommandProtocol, CommonJoin):
 
     __slots__ = ("_rooms")
     _rooms: tuple[str, ...]
@@ -238,7 +238,7 @@ class ClientJoin(IRCv3ClientCommandProtocol, JoinProtocol):
 
 
 @final
-class ServerJoin(IRCv3ServerCommandProtocol, JoinProtocol):
+class ServerJoin(IRCv3ServerCommandProtocol, CommonJoin):
 
     __slots__ = ("_rooms", "_source")
     _rooms: tuple[str, ...]
@@ -272,25 +272,15 @@ class ServerJoin(IRCv3ServerCommandProtocol, JoinProtocol):
         )
 
 
-class PingPongProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
-
-    arguments: Final[tuple[()]] = ()
-    tags: Final[None] = None
-    source: Final[None] = None
-
-    @property
-    @override
-    @abstractmethod
-    def comment(self) -> str:  # No longer optional
-        raise NotImplementedError
-
-
 @final
-class Pong(IRCv3ClientCommandProtocol, PingPongProtocol):
+class Pong(IRCv3ClientCommandProtocol):
 
     __slots__ = ("_comment")
     _comment: str
     name: Final[Literal["PONG"]] = "PONG"
+    arguments: Final[tuple[()]] = ()
+    tags: Final[None] = None
+    source: Final[None] = None
 
     def __init__(self, comment: str) -> None:
         self._comment = comment
@@ -302,11 +292,14 @@ class Pong(IRCv3ClientCommandProtocol, PingPongProtocol):
 
 
 @final
-class Ping(IRCv3ServerCommandProtocol, PingPongProtocol):
+class Ping(IRCv3ServerCommandProtocol):
 
     __slots__ = ("_comment")
     _comment: str
     name: Final[Literal["PING"]] = "PING"
+    arguments: Final[tuple[()]] = ()
+    tags: Final[None] = None
+    source: Final[None] = None
 
     def __init__(self, comment: str) -> None:
         self._comment = comment
