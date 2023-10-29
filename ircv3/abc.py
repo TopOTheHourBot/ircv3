@@ -1,28 +1,20 @@
 from __future__ import annotations
 
 __all__ = [
-    "Side",
     "IRCv3CommandProtocol",
-    "IRCv3CommonCommandProtocol",
     "IRCv3ClientCommandProtocol",
     "IRCv3ServerCommandProtocol",
 ]
 
-import enum
 import itertools
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
-from enum import Flag
-from typing import Literal, Optional, override
-
-
-class Side(Flag):
-    CLIENT = enum.auto()
-    SERVER = enum.auto()
-    COMMON = CLIENT | SERVER
+from typing import Final, Optional
 
 
 class IRCv3CommandProtocol(metaclass=ABCMeta):
+
+    __slots__ = ()
 
     def __str__(self) -> str:
         parts = []
@@ -69,31 +61,13 @@ class IRCv3CommandProtocol(metaclass=ABCMeta):
         """The command's source"""
         raise NotImplementedError
 
-    @property
-    def side(self) -> Optional[Side]:
-        """The command's side"""
-        return
-
-
-class IRCv3CommonCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
-
-    @property
-    @override
-    def side(self) -> Literal[Side.COMMON]:
-        return Side.COMMON
-
 
 class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
-    @property
-    @override
-    def side(self) -> Literal[Side.CLIENT]:
-        return Side.CLIENT
+    __slots__ = ()
+    source: Final[None] = None  # Clients must not provide a source
 
 
 class IRCv3ServerCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
-    @property
-    @override
-    def side(self) -> Literal[Side.SERVER]:
-        return Side.SERVER
+    __slots__ = ()

@@ -106,7 +106,6 @@ class ClientPrivateMessage(BasePrivateMessage, IRCv3ClientCommandProtocol):
     _room: str
     _comment: str
     _tags: Optional[Mapping[str, str]]
-    source: Final[None] = None
 
     def __init__(self, room: str, comment: str, *, tags: Optional[Mapping[str, str]] = None) -> None:
         self._room = room
@@ -226,7 +225,6 @@ class ClientJoin(BaseJoin, IRCv3ClientCommandProtocol):
 
     __slots__ = ("_rooms")
     _rooms: tuple[str, ...]
-    source: Final[None] = None
 
     def __init__(self, *rooms: str) -> None:
         self._rooms = rooms
@@ -280,7 +278,6 @@ class Pong(IRCv3ClientCommandProtocol):
     name: Final[Literal["PONG"]] = "PONG"
     arguments: Final[tuple[()]] = ()
     tags: Final[None] = None
-    source: Final[None] = None
 
     def __init__(self, comment: str) -> None:
         self._comment = comment
