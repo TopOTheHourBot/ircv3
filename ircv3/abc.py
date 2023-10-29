@@ -62,10 +62,18 @@ class IRCv3CommandProtocol(metaclass=ABCMeta):
         raise NotImplementedError
 
 
+# Server commands have a "superset" type representation as compared to client
+# commands, in that, server commands have an Optional source, where client
+# commands have a None source.
+# We do not consider client commands to be a type of server command, however,
+# as the two do not have that kind of relationship from the perspective of the
+# IRC server - sending a server command back to a server is an error.
+
+
 class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     __slots__ = ()
-    source: Final[None] = None  # Clients must not provide a source
+    source: Final[None] = None
 
 
 class IRCv3ServerCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
