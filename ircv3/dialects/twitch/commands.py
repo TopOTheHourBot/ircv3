@@ -361,13 +361,47 @@ class RoomState(IRCv3ServerCommandProtocol):
 
     @property
     def delay(self) -> Optional[int]:
-        """The amount of time, in seconds, for which subsequent messages are
-        allowed to be sent to the room
+        """The room's slow mode duration
 
-        Also known as "slow mode" in the Twitch moderator interface. ``None``
-        if the delay has not been changed.
+        ``None`` if the room's slow mode has not changed.
         """
         delay = self.tags.get("slow")
         if delay is None:
             return
         return int(delay)
+
+    @property
+    def emote_only(self) -> Optional[bool]:
+        """True if the room is in emote-only mode, otherwise false
+
+        ``None`` if the room's emote-only mode has not changed.
+        """
+        emote_only = self.tags.get("emote-only")
+        if emote_only is None:
+            return
+        return not not int(emote_only)
+
+    @property
+    def subs_only(self) -> Optional[bool]:
+        """True if the room is in subscribers-only mode, otherwise false
+
+        ``None`` if the room's subscribers-only mode has not changed.
+        """
+        subs_only = self.tags.get("subs-only")
+        if subs_only is None:
+            return
+        return not not int(subs_only)
+
+    @classmethod
+    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``RoomState`` instance"""
+        assert command.name == "ROOMSTATE"
+        assert len(command.arguments) == 1
+        assert command.comment is None
+        assert command.tags is not None
+        assert command.source is not None
+        return cls(
+            command.arguments[0],
+            tags=command.tags,
+            source=command.source,
+        )
