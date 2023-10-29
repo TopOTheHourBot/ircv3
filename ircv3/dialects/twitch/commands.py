@@ -208,17 +208,6 @@ class BaseJoin(IRCv3CommandProtocol, metaclass=ABCMeta):
     comment: Final[None] = None
     tags: Final[None] = None
 
-    @property
-    @override
-    def arguments(self) -> tuple[str]:
-        return (",".join(self.rooms),)
-
-    @property
-    @abstractmethod
-    def rooms(self) -> Sequence[str]:
-        """The rooms to join"""
-        raise NotImplementedError
-
 
 @final
 class ClientJoin(BaseJoin, IRCv3ClientCommandProtocol):
@@ -231,30 +220,39 @@ class ClientJoin(BaseJoin, IRCv3ClientCommandProtocol):
 
     @property
     @override
+    def arguments(self) -> tuple[str]:
+        return (",".join(self.rooms),)
+
+    @property
     def rooms(self) -> tuple[str, ...]:
+        """The rooms to join"""
         return self._rooms
 
 
 @final
 class ServerJoin(BaseJoin, IRCv3ServerCommandProtocol):
 
-    __slots__ = ("_rooms", "_source")
-    _rooms: tuple[str, ...]
+    __slots__ = ("_room", "_source")
+    _room: str
     _source: str
 
-    def __init__(self, *rooms: str, source: str) -> None:
-        self._rooms = rooms
+    def __init__(self, room: str, *, source: str) -> None:
+        self._room = room
         self._source = source
 
     @property
     @override
-    def rooms(self) -> tuple[str, ...]:
-        return self._rooms
+    def arguments(self) -> tuple[str]:
+        return (self.room,)
 
     @property
     @override
     def source(self) -> str:
         return self._source
+
+    @property
+    def room(self) -> str:
+        return self._room
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
@@ -265,7 +263,7 @@ class ServerJoin(BaseJoin, IRCv3ServerCommandProtocol):
         assert command.tags is None
         assert command.source is not None
         return cls(
-            *command.arguments[0].split(","),
+            command.arguments[0],
             source=command.source,
         )
 
