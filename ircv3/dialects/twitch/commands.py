@@ -77,7 +77,7 @@ class User:
         return not not int(self._tags["subscriber"])
 
 
-class CommonPrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
+class BasePrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
@@ -100,7 +100,7 @@ class CommonPrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientPrivateMessage(IRCv3ClientCommandProtocol, CommonPrivateMessage):
+class ClientPrivateMessage(BasePrivateMessage, IRCv3ClientCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags")
     _room: str
@@ -130,7 +130,7 @@ class ClientPrivateMessage(IRCv3ClientCommandProtocol, CommonPrivateMessage):
 
 
 @final
-class ServerPrivateMessage(IRCv3ServerCommandProtocol, CommonPrivateMessage):
+class ServerPrivateMessage(BasePrivateMessage, IRCv3ServerCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
     _room: str
@@ -203,7 +203,7 @@ class ServerPrivateMessage(IRCv3ServerCommandProtocol, CommonPrivateMessage):
         )
 
 
-class CommonJoin(IRCv3CommandProtocol, metaclass=ABCMeta):
+class BaseJoin(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["JOIN"]] = "JOIN"
     comment: Final[None] = None
@@ -222,7 +222,7 @@ class CommonJoin(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientJoin(IRCv3ClientCommandProtocol, CommonJoin):
+class ClientJoin(BaseJoin, IRCv3ClientCommandProtocol):
 
     __slots__ = ("_rooms")
     _rooms: tuple[str, ...]
@@ -238,7 +238,7 @@ class ClientJoin(IRCv3ClientCommandProtocol, CommonJoin):
 
 
 @final
-class ServerJoin(IRCv3ServerCommandProtocol, CommonJoin):
+class ServerJoin(BaseJoin, IRCv3ServerCommandProtocol):
 
     __slots__ = ("_rooms", "_source")
     _rooms: tuple[str, ...]
