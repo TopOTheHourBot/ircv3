@@ -6,13 +6,15 @@ __all__ = [
     "ServerPrivateMessage",
     "ClientJoin",
     "ServerJoin",
+    "ClientPart",
+    "ServerPart",
     "Ping",
     "Pong",
     "RoomState",
 ]
 
 from abc import ABCMeta, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from typing import Final, Literal, Optional, Self, final, override
 
 from ...abc import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
@@ -252,12 +254,80 @@ class ServerJoin(BaseJoin, IRCv3ServerCommandProtocol):
 
     @property
     def room(self) -> str:
+        """The room that was joined"""
         return self._room
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``ServerJoin`` instance"""
         assert command.name == "JOIN"
+        assert len(command.arguments) == 1
+        assert command.comment is None
+        assert command.tags is None
+        assert command.source is not None
+        return cls(
+            command.arguments[0],
+            source=command.source,
+        )
+
+
+class BasePart(IRCv3CommandProtocol, metaclass=ABCMeta):
+
+    name: Final[Literal["PART"]] = "PART"
+    comment: Final[None] = None
+    tags: Final[None] = None
+
+
+@final
+class ClientPart(BasePart, IRCv3ClientCommandProtocol):
+
+    __slots__ = ("_rooms")
+    _rooms: tuple[str, ...]
+
+    def __init__(self, *rooms: str) -> None:
+        self._rooms = rooms
+
+    @property
+    @override
+    def arguments(self) -> tuple[str]:
+        return (",".join(self.rooms),)
+
+    @property
+    def rooms(self) -> tuple[str, ...]:
+        """The rooms to part from"""
+        return self._rooms
+
+
+@final
+class ServerPart(BasePart, IRCv3ServerCommandProtocol):
+
+    __slots__ = ("_room", "_source")
+    _room: str
+    _source: str
+
+    def __init__(self, room: str, *, source: str) -> None:
+        self._room = room
+        self._source = source
+
+    @property
+    @override
+    def arguments(self) -> tuple[str]:
+        return (self.room,)
+
+    @property
+    @override
+    def source(self) -> str:
+        return self._source
+
+    @property
+    def room(self) -> str:
+        """The room that was parted"""
+        return self._room
+
+    @classmethod
+    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``ServerPart`` instance"""
+        assert command.name == "PART"
         assert len(command.arguments) == 1
         assert command.comment is None
         assert command.tags is None
