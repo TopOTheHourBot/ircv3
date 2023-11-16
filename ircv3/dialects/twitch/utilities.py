@@ -5,14 +5,13 @@ __all__ = [
     "is_server_private_message",
     "is_server_join",
     "is_server_part",
-    "is_ping",
     "is_room_state",
 ]
 
 from typing import TypeGuard
 
-from .commands import (LocalServerCommand, Ping, RoomState, ServerJoin,
-                       ServerPart, ServerPrivateMessage)
+from .commands import (LocalServerCommand, RoomState, ServerJoin, ServerPart,
+                       ServerPrivateMessage)
 
 
 def is_local_server_command(value: object, /) -> TypeGuard[LocalServerCommand]:
@@ -38,11 +37,6 @@ def is_server_join(value: object, /) -> TypeGuard[ServerJoin]:
 def is_server_part(value: object, /) -> TypeGuard[ServerPart]:
     """Return true if ``value`` is a ``ServerPart``, otherwise false"""
     return type(value) is ServerPart
-
-
-def is_ping(value: object, /) -> TypeGuard[Ping]:
-    """Return true if ``value`` is a ``Ping``, otherwise false"""
-    return type(value) is Ping
 
 
 def is_room_state(value: object, /) -> TypeGuard[RoomState]:
