@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 __all__ = [
+    "LocalServerCommand",
     "User",
     "ClientPrivateMessage",
     "ServerPrivateMessage",
@@ -19,6 +20,8 @@ from typing import Final, Literal, Optional, Self, final, override
 
 from ...abc import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
                     IRCv3ServerCommandProtocol)
+
+type LocalServerCommand = ServerPrivateMessage | ServerJoin | ServerPart | RoomState
 
 MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name
 

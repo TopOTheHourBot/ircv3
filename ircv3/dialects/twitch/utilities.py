@@ -11,10 +11,8 @@ __all__ = [
 
 from typing import TypeGuard
 
-from .commands import (Ping, RoomState, ServerJoin, ServerPart,
-                       ServerPrivateMessage)
-
-type LocalServerCommand = ServerPrivateMessage | ServerJoin | ServerPart | RoomState
+from .commands import (LocalServerCommand, Ping, RoomState, ServerJoin,
+                       ServerPart, ServerPrivateMessage)
 
 
 def is_local_server_command(value: object, /) -> TypeGuard[LocalServerCommand]:
