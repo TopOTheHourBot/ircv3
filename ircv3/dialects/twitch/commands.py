@@ -27,14 +27,21 @@ MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch na
 @final
 class User:
 
-    __slots__ = ("_tags", "_source")
-    __match_args__ = ("id", "name", "color", "mod", "vip", "sub")
-    _tags: Mapping[str, str]
-    _source: str
+    __slots__ = ("_message")
+    __match_args__ = (
+        "id",
+        "name",
+        "default_name",
+        "display_name",
+        "color",
+        "mod",
+        "vip",
+        "sub",
+    )
+    _message: ServerPrivateMessage
 
-    def __init__(self, tags: Mapping[str, str], source: str) -> None:
-        self._tags = tags
-        self._source = source
+    def __init__(self, message: ServerPrivateMessage) -> None:
+        self._message = message
 
     def __str__(self) -> str:
         return self.name
@@ -42,19 +49,27 @@ class User:
     @property
     def id(self) -> str:
         """The user's identifier"""
-        return self._tags["user-id"]
+        return self._message.tags["user-id"]
 
     @property
     def name(self) -> str:
         """The user's name
 
-        The user's display name if it was set, otherwise their IRC name.
+        The user's display name if it was set, otherwise their default name.
         """
-        value = self._tags.get("display-name")
-        if not value:
-            source = self._source
-            return source[:source.find("!", MIN_NAME_SIZE)]
-        return value
+        return self.display_name or self.default_name
+
+    @property
+    def default_name(self) -> str:
+        """The user's default name"""
+        source = self._message.source
+        index = source.find("!", MIN_NAME_SIZE)
+        return source[:index]
+
+    @property
+    def display_name(self) -> Optional[str]:
+        """The user's display name"""
+        return self._message.tags["display-name"] or None
 
     @property
     def color(self) -> Optional[str]:
@@ -62,22 +77,22 @@ class User:
 
         ``None`` if the user has not set a name color.
         """
-        return self._tags["color"] or None
+        return self._message.tags["color"] or None
 
     @property
     def mod(self) -> bool:
         """True if the user is a moderator, otherwise false"""
-        return not not int(self._tags["mod"])
+        return not not int(self._message.tags["mod"])
 
     @property
     def vip(self) -> bool:
         """True if the user is a VIP, otherwise false"""
-        return "vip" in self._tags  # Presence indicates they're a VIP
+        return "vip" in self._message.tags  # Presence indicates they're a VIP
 
     @property
     def sub(self) -> bool:
         """True if the user is a subscriber, otherwise false"""
-        return not not int(self._tags["subscriber"])
+        return not not int(self._message.tags["subscriber"])
 
 
 class BasePrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
@@ -172,14 +187,14 @@ class ServerPrivateMessage(BasePrivateMessage, IRCv3ServerCommandProtocol):
         return self.tags["id"]
 
     @property
-    def timestamp(self) -> int:
+    def sent(self) -> int:
         """The time at which the message was sent"""
         return int(self.tags["tmi-sent-ts"])
 
     @property
-    def author(self) -> User:
-        """The message's author"""
-        return User(self.tags, self.source)
+    def sender(self) -> User:
+        """The message's sender"""
+        return User(self)
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
