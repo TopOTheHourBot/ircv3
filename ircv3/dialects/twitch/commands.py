@@ -31,7 +31,7 @@ class User:
     __match_args__ = (
         "id",
         "name",
-        "default_name",
+        "source_name",
         "display_name",
         "color",
         "mod",
@@ -55,16 +55,15 @@ class User:
     def name(self) -> str:
         """The user's name
 
-        The user's display name if it was set, otherwise their default name.
+        The user's display name if it was set, otherwise their source name.
         """
-        return self.display_name or self.default_name
+        return self.display_name or self.source_name
 
     @property
-    def default_name(self) -> str:
-        """The user's default name"""
+    def source_name(self) -> str:
+        """The user's source name"""
         source = self._message.source
-        index = source.find("!", MIN_NAME_SIZE)
-        return source[:index]
+        return source[:source.find("!", MIN_NAME_SIZE)]
 
     @property
     def display_name(self) -> Optional[str]:
