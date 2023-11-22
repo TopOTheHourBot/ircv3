@@ -3,6 +3,7 @@ from __future__ import annotations
 __all__ = [
     "is_local_server_command",
     "is_server_private_message",
+    "is_client_private_message",
     "is_server_join",
     "is_server_part",
     "is_room_state",
@@ -10,8 +11,8 @@ __all__ = [
 
 from typing import TypeGuard
 
-from .commands import (LocalServerCommand, RoomState, ServerJoin, ServerPart,
-                       ServerPrivateMessage)
+from .commands import (ClientPrivateMessage, LocalServerCommand, RoomState,
+                       ServerJoin, ServerPart, ServerPrivateMessage)
 
 
 def is_local_server_command(value: object, /) -> TypeGuard[LocalServerCommand]:
@@ -27,6 +28,11 @@ def is_local_server_command(value: object, /) -> TypeGuard[LocalServerCommand]:
 def is_server_private_message(value: object, /) -> TypeGuard[ServerPrivateMessage]:
     """Return true if ``value`` is a ``ServerPrivateMessage``, otherwise false"""
     return type(value) is ServerPrivateMessage
+
+
+def is_client_private_message(value: object, /) -> TypeGuard[ClientPrivateMessage]:
+    """Return true if ``value`` is a ``ClientPrivateMessage``, otherwise false"""
+    return type(value) is ClientPrivateMessage
 
 
 def is_server_join(value: object, /) -> TypeGuard[ServerJoin]:
