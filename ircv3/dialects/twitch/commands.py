@@ -2,7 +2,7 @@ from __future__ import annotations
 
 __all__ = [
     "LocalServerCommand",
-    "Sender",
+    "ExternalClient",
     "ClientPrivateMessage",
     "ServerPrivateMessage",
     "ClientJoin",
@@ -26,9 +26,9 @@ MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch na
 
 
 @final
-class Sender(SupportsClientProperties):
+class ExternalClient(SupportsClientProperties):
     """A data class that represents the sending client of a PRIVMSG command
-    arriving from the Twitch IRC server
+    arriving from the Twitch IRC server, an "external" client
     """
 
     __slots__ = ("_message",)
@@ -188,9 +188,9 @@ class ServerPrivateMessage(PrivateMessage, IRCv3ServerCommandProtocol):
         return int(self.tags["tmi-sent-ts"])
 
     @property
-    def sender(self) -> Sender:
+    def sender(self) -> ExternalClient:
         """The message's sender"""
-        return Sender(self)
+        return ExternalClient(self)
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
