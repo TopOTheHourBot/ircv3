@@ -2,7 +2,7 @@ from __future__ import annotations
 
 __all__ = [
     "LocalServerCommand",
-    "User",
+    "Sender",
     "ClientPrivateMessage",
     "ServerPrivateMessage",
     "ClientJoin",
@@ -18,6 +18,7 @@ from typing import Final, Literal, Optional, Self, final, override
 
 from ...abc import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
                     IRCv3ServerCommandProtocol)
+from .types import SupportsClientProperties
 
 type LocalServerCommand = ServerPrivateMessage | ServerJoin | ServerPart | RoomState
 
@@ -25,19 +26,13 @@ MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch na
 
 
 @final
-class User:
+class Sender(SupportsClientProperties):
+    """A data class that represents the sending client of a PRIVMSG command
+    arriving from the Twitch IRC server
+    """
 
-    __slots__ = ("_message")
-    __match_args__ = (
-        "id",
-        "name",
-        "source_name",
-        "display_name",
-        "color",
-        "mod",
-        "vip",
-        "sub",
-    )
+    __slots__ = ("_message",)
+
     _message: ServerPrivateMessage
 
     def __init__(self, message: ServerPrivateMessage) -> None:
@@ -47,54 +42,54 @@ class User:
         return self.name
 
     @property
-    def id(self) -> str:
-        """The user's identifier"""
-        return self._message.tags["user-id"]
-
-    @property
+    @override
     def name(self) -> str:
-        """The user's name
+        """The client's name
 
-        The user's display name if it was set, otherwise their source name.
+        The client's display name if available in the message tags, otherwise
+        their name as presented by the message source.
         """
-        return self.display_name or self.source_name
-
-    @property
-    def source_name(self) -> str:
-        """The user's source name"""
-        source = self._message.source
+        display_name = self.message.tags["display-name"]
+        if display_name:
+            return display_name
+        source = self.message.source
         return source[:source.find("!", MIN_NAME_SIZE)]
 
     @property
-    def display_name(self) -> Optional[str]:
-        """The user's display name"""
-        return self._message.tags["display-name"] or None
+    def message(self) -> ServerPrivateMessage:
+        """The client's message"""
+        return self._message
 
     @property
-    def color(self) -> Optional[str]:
-        """The user's name color
+    def id(self) -> str:
+        """The client's identifier"""
+        return self.message.tags["user-id"]
 
-        ``None`` if the user has not set a name color.
+    @property
+    def color(self) -> str:
+        """The client's name color
+
+        An empty string if the client has not set a color.
         """
-        return self._message.tags["color"] or None
+        return self.message.tags["color"]
 
     @property
     def mod(self) -> bool:
-        """True if the user is a moderator, otherwise false"""
-        return not not int(self._message.tags["mod"])
+        """True if the client is a moderator, otherwise false"""
+        return self.message.tags["mod"] == "1"
 
     @property
     def vip(self) -> bool:
-        """True if the user is a VIP, otherwise false"""
-        return "vip" in self._message.tags  # Presence indicates they're a VIP
+        """True if the client is a VIP, otherwise false"""
+        return "vip" in self.message.tags  # Presence indicates VIP
 
     @property
     def sub(self) -> bool:
-        """True if the user is a subscriber, otherwise false"""
-        return not not int(self._message.tags["subscriber"])
+        """True if the client is a subscriber, otherwise false"""
+        return self.message.tags["subscriber"] == "1"
 
 
-class BasePrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
+class PrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
@@ -117,9 +112,10 @@ class BasePrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientPrivateMessage(BasePrivateMessage, IRCv3ClientCommandProtocol):
+class ClientPrivateMessage(PrivateMessage, IRCv3ClientCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags")
+
     _room: str
     _comment: str
     _tags: Optional[Mapping[str, str]]
@@ -146,9 +142,10 @@ class ClientPrivateMessage(BasePrivateMessage, IRCv3ClientCommandProtocol):
 
 
 @final
-class ServerPrivateMessage(BasePrivateMessage, IRCv3ServerCommandProtocol):
+class ServerPrivateMessage(PrivateMessage, IRCv3ServerCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
+
     _room: str
     _comment: str
     _tags: Mapping[str, str]
@@ -191,9 +188,9 @@ class ServerPrivateMessage(BasePrivateMessage, IRCv3ServerCommandProtocol):
         return int(self.tags["tmi-sent-ts"])
 
     @property
-    def sender(self) -> User:
+    def sender(self) -> Sender:
         """The message's sender"""
-        return User(self)
+        return Sender(self)
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
@@ -219,7 +216,7 @@ class ServerPrivateMessage(BasePrivateMessage, IRCv3ServerCommandProtocol):
         )
 
 
-class BaseJoin(IRCv3CommandProtocol, metaclass=ABCMeta):
+class Join(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["JOIN"]] = "JOIN"
     comment: Final[None] = None
@@ -227,9 +224,10 @@ class BaseJoin(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientJoin(BaseJoin, IRCv3ClientCommandProtocol):
+class ClientJoin(Join, IRCv3ClientCommandProtocol):
 
-    __slots__ = ("_rooms")
+    __slots__ = ("_rooms",)
+
     _rooms: tuple[str, ...]
 
     def __init__(self, *rooms: str) -> None:
@@ -247,9 +245,10 @@ class ClientJoin(BaseJoin, IRCv3ClientCommandProtocol):
 
 
 @final
-class ServerJoin(BaseJoin, IRCv3ServerCommandProtocol):
+class ServerJoin(Join, IRCv3ServerCommandProtocol):
 
     __slots__ = ("_room", "_source")
+
     _room: str
     _source: str
 
@@ -286,7 +285,7 @@ class ServerJoin(BaseJoin, IRCv3ServerCommandProtocol):
         )
 
 
-class BasePart(IRCv3CommandProtocol, metaclass=ABCMeta):
+class Part(IRCv3CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PART"]] = "PART"
     comment: Final[None] = None
@@ -294,9 +293,10 @@ class BasePart(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientPart(BasePart, IRCv3ClientCommandProtocol):
+class ClientPart(Part, IRCv3ClientCommandProtocol):
 
-    __slots__ = ("_rooms")
+    __slots__ = ("_rooms",)
+
     _rooms: tuple[str, ...]
 
     def __init__(self, *rooms: str) -> None:
@@ -314,9 +314,10 @@ class ClientPart(BasePart, IRCv3ClientCommandProtocol):
 
 
 @final
-class ServerPart(BasePart, IRCv3ServerCommandProtocol):
+class ServerPart(Part, IRCv3ServerCommandProtocol):
 
     __slots__ = ("_room", "_source")
+
     _room: str
     _source: str
 
@@ -357,9 +358,11 @@ class ServerPart(BasePart, IRCv3ServerCommandProtocol):
 class RoomState(IRCv3ServerCommandProtocol):
 
     __slots__ = ("_room", "_tags", "_source")
+
     _room: str
     _tags: Mapping[str, str]
     _source: str
+
     name: Final[Literal["ROOMSTATE"]] = "ROOMSTATE"
     comment: Final[None] = None
 
@@ -389,15 +392,13 @@ class RoomState(IRCv3ServerCommandProtocol):
         return self._room
 
     @property
-    def delay(self) -> Optional[int]:
-        """The room's slow mode duration
+    def cooldown(self) -> Optional[int]:
+        """The room's message cooldown, in seconds
 
-        ``None`` if the room's slow mode has not changed.
+        ``None`` if the room's message cooldown has not changed.
         """
-        delay = self.tags.get("slow")
-        if delay is None:
-            return
-        return int(delay)
+        cooldown = self.tags.get("slow")
+        return None if cooldown is None else int(cooldown)
 
     @property
     def emote_only(self) -> Optional[bool]:
@@ -406,9 +407,7 @@ class RoomState(IRCv3ServerCommandProtocol):
         ``None`` if the room's emote-only mode has not changed.
         """
         emote_only = self.tags.get("emote-only")
-        if emote_only is None:
-            return
-        return not not int(emote_only)
+        return None if emote_only is None else emote_only == "1"
 
     @property
     def subs_only(self) -> Optional[bool]:
@@ -417,9 +416,7 @@ class RoomState(IRCv3ServerCommandProtocol):
         ``None`` if the room's subscribers-only mode has not changed.
         """
         subs_only = self.tags.get("subs-only")
-        if subs_only is None:
-            return
-        return not not int(subs_only)
+        return None if subs_only is None else subs_only == "1"
 
     @classmethod
     def cast(cls, command: IRCv3CommandProtocol) -> Self:
