@@ -39,21 +39,18 @@ class ExternalClient(SupportsClientProperties):
         self._message = message
 
     def __str__(self) -> str:
-        return self.name
+        return self.handle
 
     @property
     @override
     def name(self) -> str:
-        """The client's name
-
-        The client's display name if available in the message tags, otherwise
-        their name as presented by the message source.
-        """
-        display_name = self.message.tags["display-name"]
-        if display_name:
-            return display_name
         source = self.message.source
         return source[:source.find("!", MIN_NAME_SIZE)]
+
+    @property
+    @override
+    def display_name(self) -> str:
+        return self.message.tags["display-name"] or super().display_name
 
     @property
     def message(self) -> ServerPrivateMessage:
