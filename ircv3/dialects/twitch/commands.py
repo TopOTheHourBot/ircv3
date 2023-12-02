@@ -137,6 +137,19 @@ class ClientPrivateMessage(PrivateMessage, IRCv3ClientCommandProtocol):
     def room(self) -> str:
         return self._room
 
+    @classmethod
+    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``ClientPrivateMessage`` instance"""
+        assert command.name == "PRIVMSG"
+        assert len(command.arguments) == 1
+        assert command.comment is not None
+        assert command.source is None
+        return cls(
+            command.arguments[0],
+            command.comment,
+            tags=command.tags,
+        )
+
 
 @final
 class ServerPrivateMessage(PrivateMessage, IRCv3ServerCommandProtocol):
@@ -240,6 +253,15 @@ class ClientJoin(Join, IRCv3ClientCommandProtocol):
         """The rooms to join"""
         return self._rooms
 
+    @classmethod
+    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+        assert command.name == "JOIN"
+        assert len(command.arguments) == 1
+        assert command.comment is None
+        assert command.tags is None
+        assert command.source is None
+        return cls(*command.arguments[0].split(","))
+
 
 @final
 class ServerJoin(Join, IRCv3ServerCommandProtocol):
@@ -308,6 +330,15 @@ class ClientPart(Part, IRCv3ClientCommandProtocol):
     def rooms(self) -> tuple[str, ...]:
         """The rooms to part from"""
         return self._rooms
+
+    @classmethod
+    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+        assert command.name == "PART"
+        assert len(command.arguments) == 1
+        assert command.comment is None
+        assert command.tags is None
+        assert command.source is None
+        return cls(*command.arguments[0].split(","))
 
 
 @final
