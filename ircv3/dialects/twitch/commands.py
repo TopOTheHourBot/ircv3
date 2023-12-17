@@ -28,7 +28,7 @@ MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch na
 @final
 class ExternalClient(SupportsClientProperties):
     """A data class that represents the sending client of a PRIVMSG command
-    arriving from the Twitch IRC server, an "external" client
+    arriving from the Twitch IRC server - an "external" client
     """
 
     __slots__ = ("_message",)
@@ -71,17 +71,24 @@ class ExternalClient(SupportsClientProperties):
         return self.message.tags["color"]
 
     @property
-    def mod(self) -> bool:
+    def is_owner(self) -> bool:
+        """True if the client is the owner of the message's room, otherwise
+        false
+        """
+        return self.room == self.message.room
+
+    @property
+    def is_moderator(self) -> bool:
         """True if the client is a moderator, otherwise false"""
         return self.message.tags["mod"] == "1"
 
     @property
-    def vip(self) -> bool:
+    def is_vip(self) -> bool:
         """True if the client is a VIP, otherwise false"""
         return "vip" in self.message.tags  # Presence indicates VIP
 
     @property
-    def sub(self) -> bool:
+    def is_subscriber(self) -> bool:
         """True if the client is a subscriber, otherwise false"""
         return self.message.tags["subscriber"] == "1"
 
