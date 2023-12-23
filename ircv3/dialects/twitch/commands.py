@@ -71,9 +71,9 @@ class ExternalClient(SupportsClientProperties):
         return self.message.tags["color"]
 
     @property
-    def is_owner(self) -> bool:
-        """True if the client is the owner of the message's room, otherwise
-        false
+    def is_broadcaster(self) -> bool:
+        """True if the client is the broadcaster associated with the message's
+        room, otherwise false
         """
         return self.room == self.message.room
 
