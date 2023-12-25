@@ -7,12 +7,12 @@ __all__ = [
 
 from typing import Final, Literal, Self, final, override
 
-from ...abc import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
-                    IRCv3ServerCommandProtocol)
+from ...abc import (ClientCommandProtocol, CommandProtocol,
+                    ServerCommandProtocol)
 
 
 @final
-class Pong(IRCv3ClientCommandProtocol):
+class Pong(ClientCommandProtocol):
 
     __slots__ = ("_comment")
     _comment: str
@@ -30,7 +30,7 @@ class Pong(IRCv3ClientCommandProtocol):
 
 
 @final
-class Ping(IRCv3ServerCommandProtocol):
+class Ping(ServerCommandProtocol):
 
     __slots__ = ("_comment")
     _comment: str
@@ -48,7 +48,7 @@ class Ping(IRCv3ServerCommandProtocol):
         return self._comment
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``Ping`` instance"""
         assert command.name == "PING"
         assert len(command.arguments) == 0

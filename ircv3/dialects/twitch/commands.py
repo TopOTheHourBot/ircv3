@@ -16,8 +16,8 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import Final, Literal, Optional, Self, final, override
 
-from ...abc import (IRCv3ClientCommandProtocol, IRCv3CommandProtocol,
-                    IRCv3ServerCommandProtocol)
+from ...abc import (ClientCommandProtocol, CommandProtocol,
+                    ServerCommandProtocol)
 from .types import SupportsClientProperties
 
 type LocalServerCommand = ServerPrivateMessage | ServerJoin | ServerPart | RoomState
@@ -93,7 +93,7 @@ class ExternalClient(SupportsClientProperties):
         return self.message.tags["subscriber"] == "1"
 
 
-class PrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
+class PrivateMessage(CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
@@ -116,7 +116,7 @@ class PrivateMessage(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientPrivateMessage(PrivateMessage, IRCv3ClientCommandProtocol):
+class ClientPrivateMessage(PrivateMessage, ClientCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags")
 
@@ -145,7 +145,7 @@ class ClientPrivateMessage(PrivateMessage, IRCv3ClientCommandProtocol):
         return self._room
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``ClientPrivateMessage`` instance"""
         assert command.name == "PRIVMSG"
         assert len(command.arguments) == 1
@@ -159,7 +159,7 @@ class ClientPrivateMessage(PrivateMessage, IRCv3ClientCommandProtocol):
 
 
 @final
-class ServerPrivateMessage(PrivateMessage, IRCv3ServerCommandProtocol):
+class ServerPrivateMessage(PrivateMessage, ServerCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
 
@@ -210,7 +210,7 @@ class ServerPrivateMessage(PrivateMessage, IRCv3ServerCommandProtocol):
         return ExternalClient(self)
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``ServerPrivateMessage`` instance"""
         assert command.name == "PRIVMSG"
         assert len(command.arguments) == 1
@@ -233,7 +233,7 @@ class ServerPrivateMessage(PrivateMessage, IRCv3ServerCommandProtocol):
         )
 
 
-class Join(IRCv3CommandProtocol, metaclass=ABCMeta):
+class Join(CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["JOIN"]] = "JOIN"
     comment: Final[None] = None
@@ -241,7 +241,7 @@ class Join(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientJoin(Join, IRCv3ClientCommandProtocol):
+class ClientJoin(Join, ClientCommandProtocol):
 
     __slots__ = ("_rooms",)
 
@@ -261,7 +261,7 @@ class ClientJoin(Join, IRCv3ClientCommandProtocol):
         return self._rooms
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         assert command.name == "JOIN"
         assert len(command.arguments) == 1
         assert command.comment is None
@@ -271,7 +271,7 @@ class ClientJoin(Join, IRCv3ClientCommandProtocol):
 
 
 @final
-class ServerJoin(Join, IRCv3ServerCommandProtocol):
+class ServerJoin(Join, ServerCommandProtocol):
 
     __slots__ = ("_room", "_source")
 
@@ -298,7 +298,7 @@ class ServerJoin(Join, IRCv3ServerCommandProtocol):
         return self._room
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``ServerJoin`` instance"""
         assert command.name == "JOIN"
         assert len(command.arguments) == 1
@@ -311,7 +311,7 @@ class ServerJoin(Join, IRCv3ServerCommandProtocol):
         )
 
 
-class Part(IRCv3CommandProtocol, metaclass=ABCMeta):
+class Part(CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PART"]] = "PART"
     comment: Final[None] = None
@@ -319,7 +319,7 @@ class Part(IRCv3CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientPart(Part, IRCv3ClientCommandProtocol):
+class ClientPart(Part, ClientCommandProtocol):
 
     __slots__ = ("_rooms",)
 
@@ -339,7 +339,7 @@ class ClientPart(Part, IRCv3ClientCommandProtocol):
         return self._rooms
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         assert command.name == "PART"
         assert len(command.arguments) == 1
         assert command.comment is None
@@ -349,7 +349,7 @@ class ClientPart(Part, IRCv3ClientCommandProtocol):
 
 
 @final
-class ServerPart(Part, IRCv3ServerCommandProtocol):
+class ServerPart(Part, ServerCommandProtocol):
 
     __slots__ = ("_room", "_source")
 
@@ -376,7 +376,7 @@ class ServerPart(Part, IRCv3ServerCommandProtocol):
         return self._room
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``ServerPart`` instance"""
         assert command.name == "PART"
         assert len(command.arguments) == 1
@@ -390,7 +390,7 @@ class ServerPart(Part, IRCv3ServerCommandProtocol):
 
 
 @final
-class RoomState(IRCv3ServerCommandProtocol):
+class RoomState(ServerCommandProtocol):
 
     __slots__ = ("_room", "_tags", "_source")
 
@@ -454,7 +454,7 @@ class RoomState(IRCv3ServerCommandProtocol):
         return None if subs_only is None else subs_only == "1"
 
     @classmethod
-    def cast(cls, command: IRCv3CommandProtocol) -> Self:
+    def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``RoomState`` instance"""
         assert command.name == "ROOMSTATE"
         assert len(command.arguments) == 1

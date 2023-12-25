@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-__all__ = ["IRCv3Command"]
+__all__ = ["Command"]
 
 from collections.abc import Mapping, Sequence
 from typing import Optional, Self
 
-from .abc import IRCv3CommandProtocol
+from .abc import CommandProtocol
 from .parser import Parser
 
 
-class IRCv3Command(IRCv3CommandProtocol):
+class Command(CommandProtocol):
 
     __slots__ = (
         "_name",

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 __all__ = [
-    "IRCv3CommandProtocol",
-    "IRCv3ClientCommandProtocol",
-    "IRCv3ServerCommandProtocol",
+    "CommandProtocol",
+    "ClientCommandProtocol",
+    "ServerCommandProtocol",
 ]
 
 import itertools
@@ -12,7 +12,7 @@ from collections.abc import Mapping, Sequence
 from typing import Final, Optional
 
 
-class IRCv3CommandProtocol(metaclass=ABCMeta):
+class CommandProtocol(metaclass=ABCMeta):
 
     __slots__ = ()
 
@@ -70,12 +70,12 @@ class IRCv3CommandProtocol(metaclass=ABCMeta):
 # IRC server - sending a server command back to a server is an error.
 
 
-class IRCv3ClientCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
+class ClientCommandProtocol(CommandProtocol, metaclass=ABCMeta):
 
     __slots__ = ()
     source: Final[None] = None
 
 
-class IRCv3ServerCommandProtocol(IRCv3CommandProtocol, metaclass=ABCMeta):
+class ServerCommandProtocol(CommandProtocol, metaclass=ABCMeta):
 
     __slots__ = ()
