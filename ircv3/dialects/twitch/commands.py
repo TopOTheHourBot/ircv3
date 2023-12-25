@@ -445,13 +445,13 @@ class RoomState(ServerCommandProtocol):
         return None if emote_only is None else emote_only == "1"
 
     @property
-    def subs_only(self) -> Optional[bool]:
+    def subscribers_only(self) -> Optional[bool]:
         """True if the room is in subscribers-only mode, otherwise false
 
         ``None`` if the room's subscribers-only mode has not changed.
         """
-        subs_only = self.tags.get("subs-only")
-        return None if subs_only is None else subs_only == "1"
+        subscribers_only = self.tags.get("subs-only")
+        return None if subscribers_only is None else subscribers_only == "1"
 
     @classmethod
     def cast(cls, command: CommandProtocol) -> Self:
