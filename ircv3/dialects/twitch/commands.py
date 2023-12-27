@@ -41,6 +41,11 @@ class ExternalClient(SupportsClientProperties):
     def __str__(self) -> str:
         return self.handle
 
+    def __eq__(self, other: object) -> bool:
+        if type(other) is ExternalClient:
+            return self.id == other.id
+        return NotImplemented
+
     @property
     @override
     def name(self) -> str:
