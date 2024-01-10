@@ -8,12 +8,14 @@ __all__ = [
     "is_server_part",
     "is_room_state",
     "is_notice",
+    "is_global_user_state",
 ]
 
 from typing import TypeGuard
 
-from .commands import (ClientPrivateMessage, LocalServerCommand, Notice,
-                       RoomState, ServerJoin, ServerPart, ServerPrivateMessage)
+from .commands import (ClientPrivateMessage, GlobalUserState,
+                       LocalServerCommand, Notice, RoomState, ServerJoin,
+                       ServerPart, ServerPrivateMessage)
 
 
 def is_local_server_command(value: object, /) -> TypeGuard[LocalServerCommand]:
@@ -24,6 +26,7 @@ def is_local_server_command(value: object, /) -> TypeGuard[LocalServerCommand]:
         ServerPart,
         RoomState,
         Notice,
+        GlobalUserState,
     }
 
 
@@ -55,3 +58,8 @@ def is_room_state(value: object, /) -> TypeGuard[RoomState]:
 def is_notice(value: object, /) -> TypeGuard[Notice]:
     """Return true if ``value`` is a ``Notice``, otherwise false"""
     return type(value) is Notice
+
+
+def is_global_user_state(value: object, /) -> TypeGuard[GlobalUserState]:
+    """Return true if ``value`` is a ``GlobalUserState``, otherwise false"""
+    return type(value) is GlobalUserState

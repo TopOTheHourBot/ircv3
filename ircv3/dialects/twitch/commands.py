@@ -11,6 +11,7 @@ __all__ = [
     "ServerPart",
     "RoomState",
     "Notice",
+    "GlobalUserState",
 ]
 
 from abc import ABCMeta, abstractmethod
@@ -27,6 +28,7 @@ type LocalServerCommand = (
     | ServerPart
     | RoomState
     | Notice
+    | GlobalUserState
 )
 
 MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name
@@ -317,10 +319,7 @@ class ServerJoin(Join, ServerCommandProtocol):
         assert command.comment is None
         assert command.tags is None
         assert command.source is not None
-        return cls(
-            command.arguments[0],
-            source=command.source,
-        )
+        return cls(command.arguments[0], source=command.source)
 
 
 class Part(CommandProtocol, metaclass=ABCMeta):
@@ -395,10 +394,7 @@ class ServerPart(Part, ServerCommandProtocol):
         assert command.comment is None
         assert command.tags is None
         assert command.source is not None
-        return cls(
-            command.arguments[0],
-            source=command.source,
-        )
+        return cls(command.arguments[0], source=command.source)
 
 
 @final
@@ -490,7 +486,7 @@ class Notice(ServerCommandProtocol):
     _tags: Optional[Mapping[str, str]]
     _source: str
 
-    name: Final[str] = "NOTICE"
+    name: Final[Literal["NOTICE"]] = "NOTICE"
 
     def __init__(
         self,
@@ -537,6 +533,7 @@ class Notice(ServerCommandProtocol):
     def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``Notice`` instance"""
         assert command.name == "NOTICE"
+        assert len(command.arguments) == 1
         assert command.comment is not None
         assert command.source is not None
         return cls(
@@ -545,3 +542,40 @@ class Notice(ServerCommandProtocol):
             tags=command.tags,
             source=command.source,
         )
+
+
+@final
+class GlobalUserState(ServerCommandProtocol):
+
+    __slots__ = ("_tags", "_source")
+
+    _tags: Mapping[str, str]
+    _source: str
+
+    name: Final[Literal["GLOBALUSERSTATE"]] = "GLOBALUSERSTATE"
+    arguments: Final[tuple[()]] = ()
+    comment: Final[None] = None
+
+    def __init__(self, *, tags: Mapping[str, str], source: str) -> None:
+        self._tags = tags
+        self._source = source
+
+    @property
+    @override
+    def tags(self) -> Mapping[str, str]:
+        return self._tags
+
+    @property
+    @override
+    def source(self) -> str:
+        return self._source
+
+    @classmethod
+    def cast(cls, command: CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``GlobalUserState`` instance"""
+        assert command.name == "GLOBALUSERSTATE"
+        assert len(command.arguments) == 0
+        assert command.comment is None
+        assert command.tags is not None
+        assert command.source is not None
+        return cls(tags=command.tags, source=command.source)
