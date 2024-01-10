@@ -28,7 +28,6 @@ type LocalServerCommand = (
     | ServerPart
     | RoomState
     | Notice
-    | GlobalUserState
 )
 
 MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name

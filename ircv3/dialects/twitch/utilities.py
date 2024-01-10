@@ -26,7 +26,6 @@ def is_local_server_command(value: object, /) -> TypeGuard[LocalServerCommand]:
         ServerPart,
         RoomState,
         Notice,
-        GlobalUserState,
     }
 
 
