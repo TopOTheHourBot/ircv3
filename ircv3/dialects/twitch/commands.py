@@ -10,6 +10,7 @@ __all__ = [
     "ClientPart",
     "ServerPart",
     "RoomState",
+    "Notice",
 ]
 
 from abc import ABCMeta, abstractmethod
@@ -20,7 +21,13 @@ from ...abc import (ClientCommandProtocol, CommandProtocol,
                     ServerCommandProtocol)
 from .types import SupportsClientProperties
 
-type LocalServerCommand = ServerPrivateMessage | ServerJoin | ServerPart | RoomState
+type LocalServerCommand = (
+    ServerPrivateMessage
+    | ServerJoin
+    | ServerPart
+    | RoomState
+    | Notice
+)
 
 MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name
 
@@ -468,6 +475,73 @@ class RoomState(ServerCommandProtocol):
         assert command.source is not None
         return cls(
             command.arguments[0],
+            tags=command.tags,
+            source=command.source,
+        )
+
+
+@final
+class Notice(ServerCommandProtocol):
+
+    __slots__ = ("_room", "_comment", "_tags", "_source")
+
+    _room: str
+    _comment: str
+    _tags: Optional[Mapping[str, str]]
+    _source: str
+
+    name: Final[str] = "NOTICE"
+
+    def __init__(
+        self,
+        room: str,
+        comment: str,
+        *,
+        tags: Optional[Mapping[str, str]] = None,
+        source: str,
+    ) -> None:
+        self._room = room
+        self._comment = comment
+        self._tags = tags
+        self._source = source
+
+    @property
+    @override
+    def arguments(self) -> tuple[str]:
+        return (self.room,)
+
+    @property
+    @override
+    def comment(self) -> str:
+        return self._comment
+
+    @property
+    @override
+    def tags(self) -> Optional[Mapping[str, str]]:
+        return self._tags
+
+    @property
+    @override
+    def source(self) -> str:
+        return self._source
+
+    @property
+    def room(self) -> str:
+        """The room this notice pertains to
+
+        Set to ``"*"`` if a global notice.
+        """
+        return self._room
+
+    @classmethod
+    def cast(cls, command: CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``Notice`` instance"""
+        assert command.name == "NOTICE"
+        assert command.comment is not None
+        assert command.source is not None
+        return cls(
+            command.arguments[0],
+            command.comment,
             tags=command.tags,
             source=command.source,
         )
