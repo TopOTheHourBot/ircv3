@@ -40,14 +40,13 @@ class ExternalClient(SupportsClientProperties):
     """
 
     __slots__ = ("_message",)
-
     _message: ServerPrivateMessage
 
     def __init__(self, message: ServerPrivateMessage) -> None:
         self._message = message
 
-    def __str__(self) -> str:
-        return self.handle
+    def __hash__(self) -> int:
+        return hash((self.message.room, self.id))
 
     def __eq__(self, other: object) -> bool:
         if type(other) is ExternalClient:
@@ -132,7 +131,6 @@ class PrivateMessage(CommandProtocol, metaclass=ABCMeta):
 class ClientPrivateMessage(PrivateMessage, ClientCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags")
-
     _room: str
     _comment: str
     _tags: Optional[Mapping[str, str]]
@@ -175,7 +173,6 @@ class ClientPrivateMessage(PrivateMessage, ClientCommandProtocol):
 class ServerPrivateMessage(PrivateMessage, ServerCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
-
     _room: str
     _comment: str
     _tags: Mapping[str, str]
@@ -186,6 +183,14 @@ class ServerPrivateMessage(PrivateMessage, ServerCommandProtocol):
         self._comment = comment
         self._tags = tags
         self._source = source
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
+    def __eq__(self, other: object) -> bool:
+        if type(other) is ServerPrivateMessage:
+            return self.id == other.id
+        return NotImplemented
 
     @property
     @override
@@ -257,7 +262,6 @@ class Join(CommandProtocol, metaclass=ABCMeta):
 class ClientJoin(Join, ClientCommandProtocol):
 
     __slots__ = ("_rooms",)
-
     _rooms: tuple[str, ...]
 
     def __init__(self, *rooms: str) -> None:
@@ -287,7 +291,6 @@ class ClientJoin(Join, ClientCommandProtocol):
 class ServerJoin(Join, ServerCommandProtocol):
 
     __slots__ = ("_room", "_source")
-
     _room: str
     _source: str
 
@@ -332,7 +335,6 @@ class Part(CommandProtocol, metaclass=ABCMeta):
 class ClientPart(Part, ClientCommandProtocol):
 
     __slots__ = ("_rooms",)
-
     _rooms: tuple[str, ...]
 
     def __init__(self, *rooms: str) -> None:
@@ -362,7 +364,6 @@ class ClientPart(Part, ClientCommandProtocol):
 class ServerPart(Part, ServerCommandProtocol):
 
     __slots__ = ("_room", "_source")
-
     _room: str
     _source: str
 
@@ -400,11 +401,9 @@ class ServerPart(Part, ServerCommandProtocol):
 class RoomState(ServerCommandProtocol):
 
     __slots__ = ("_room", "_tags", "_source")
-
     _room: str
     _tags: Mapping[str, str]
     _source: str
-
     name: Final[Literal["ROOMSTATE"]] = "ROOMSTATE"
     comment: Final[None] = None
 
@@ -479,12 +478,10 @@ class RoomState(ServerCommandProtocol):
 class Notice(ServerCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
-
     _room: str
     _comment: str
     _tags: Optional[Mapping[str, str]]
     _source: str
-
     name: Final[Literal["NOTICE"]] = "NOTICE"
 
     def __init__(
@@ -547,10 +544,8 @@ class Notice(ServerCommandProtocol):
 class GlobalUserState(ServerCommandProtocol):
 
     __slots__ = ("_tags", "_source")
-
     _tags: Mapping[str, str]
     _source: str
-
     name: Final[Literal["GLOBALUSERSTATE"]] = "GLOBALUSERSTATE"
     arguments: Final[tuple[()]] = ()
     comment: Final[None] = None
