@@ -3,8 +3,8 @@ from __future__ import annotations
 __all__ = [
     "LocalServerCommand",
     "ExternalClient",
-    "ClientPrivateMessage",
-    "ServerPrivateMessage",
+    "ClientMessage",
+    "ServerMessage",
     "ClientJoin",
     "ServerJoin",
     "ClientPart",
@@ -23,7 +23,7 @@ from ...abc import (ClientCommandProtocol, CommandProtocol,
 from .types import SupportsClientProperties
 
 type LocalServerCommand = (
-    ServerPrivateMessage
+    ServerMessage
     | ServerJoin
     | ServerPart
     | RoomState
@@ -40,13 +40,13 @@ class ExternalClient(SupportsClientProperties):
     """
 
     __slots__ = ("_message",)
-    _message: ServerPrivateMessage
+    _message: ServerMessage
 
-    def __init__(self, message: ServerPrivateMessage) -> None:
+    def __init__(self, message: ServerMessage) -> None:
         self._message = message
 
     def __hash__(self) -> int:
-        return hash((self.message.room, self.id))
+        return hash(self.id)
 
     def __eq__(self, other: object) -> bool:
         if type(other) is ExternalClient:
@@ -65,7 +65,7 @@ class ExternalClient(SupportsClientProperties):
         return self.message.tags["display-name"] or super().display_name
 
     @property
-    def message(self) -> ServerPrivateMessage:
+    def message(self) -> ServerMessage:
         """The client's message"""
         return self._message
 
@@ -105,7 +105,7 @@ class ExternalClient(SupportsClientProperties):
         return self.message.tags["subscriber"] == "1"
 
 
-class PrivateMessage(CommandProtocol, metaclass=ABCMeta):
+class Message(CommandProtocol, metaclass=ABCMeta):
 
     name: Final[Literal["PRIVMSG"]] = "PRIVMSG"
 
@@ -128,7 +128,7 @@ class PrivateMessage(CommandProtocol, metaclass=ABCMeta):
 
 
 @final
-class ClientPrivateMessage(PrivateMessage, ClientCommandProtocol):
+class ClientMessage(Message, ClientCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags")
     _room: str
@@ -157,7 +157,7 @@ class ClientPrivateMessage(PrivateMessage, ClientCommandProtocol):
 
     @classmethod
     def cast(cls, command: CommandProtocol) -> Self:
-        """Reinterpret ``command`` as a new ``ClientPrivateMessage`` instance"""
+        """Reinterpret ``command`` as a new ``ClientMessage`` instance"""
         assert command.name == "PRIVMSG"
         assert len(command.arguments) == 1
         assert command.comment is not None
@@ -170,7 +170,7 @@ class ClientPrivateMessage(PrivateMessage, ClientCommandProtocol):
 
 
 @final
-class ServerPrivateMessage(PrivateMessage, ServerCommandProtocol):
+class ServerMessage(Message, ServerCommandProtocol):
 
     __slots__ = ("_room", "_comment", "_tags", "_source")
     _room: str
@@ -188,7 +188,7 @@ class ServerPrivateMessage(PrivateMessage, ServerCommandProtocol):
         return hash(self.id)
 
     def __eq__(self, other: object) -> bool:
-        if type(other) is ServerPrivateMessage:
+        if type(other) is ServerMessage:
             return self.id == other.id
         return NotImplemented
 
@@ -229,7 +229,7 @@ class ServerPrivateMessage(PrivateMessage, ServerCommandProtocol):
 
     @classmethod
     def cast(cls, command: CommandProtocol) -> Self:
-        """Reinterpret ``command`` as a new ``ServerPrivateMessage`` instance"""
+        """Reinterpret ``command`` as a new ``ServerMessage`` instance"""
         assert command.name == "PRIVMSG"
         assert len(command.arguments) == 1
         assert command.comment is not None
@@ -242,9 +242,9 @@ class ServerPrivateMessage(PrivateMessage, ServerCommandProtocol):
             source=command.source,
         )
 
-    def reply(self, comment: str) -> ClientPrivateMessage:
-        """Return a new ``ClientPrivateMessage`` in reply to this message"""
-        return ClientPrivateMessage(
+    def reply(self, comment: str) -> ClientMessage:
+        """Return a new ``ClientMessage`` in reply to this message"""
+        return ClientMessage(
             self.room,
             comment,
             tags={"reply-parent-msg-id": self.id},
