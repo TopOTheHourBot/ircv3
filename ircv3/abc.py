@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 __all__ = [
+    "CommandProtocolJSON",
     "CommandProtocol",
     "ClientCommandProtocol",
     "ServerCommandProtocol",
@@ -9,7 +10,16 @@ __all__ = [
 import itertools
 from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping, Sequence
-from typing import Final, Optional
+from typing import Final, Optional, TypedDict
+
+
+class CommandProtocolJSON(TypedDict):
+
+    name: str
+    arguments: list[str]
+    comment: str | None
+    tags: dict[str, str] | None
+    source: str | None
 
 
 class CommandProtocol(metaclass=ABCMeta):
@@ -60,6 +70,23 @@ class CommandProtocol(metaclass=ABCMeta):
     def source(self) -> Optional[str]:
         """The command's source"""
         raise NotImplementedError
+
+    def to_string(self) -> str:
+        """Return a string representation of the command
+
+        Same as ``str(command)``.
+        """
+        return str(self)
+
+    def to_json(self) -> CommandProtocolJSON:
+        """Return a JSON representation of the command"""
+        return {
+            "name": self.name,
+            "arguments": list(self.arguments),
+            "comment": self.comment,
+            "tags": None if self.tags is None else dict(self.tags),
+            "source": self.source,
+        }
 
 
 # Server commands have a "superset" type representation as compared to client
