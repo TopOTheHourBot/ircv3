@@ -20,7 +20,6 @@ from typing import Final, Literal, Optional, Self, final, override
 
 from ...abc import (ClientCommandProtocol, CommandProtocol,
                     ServerCommandProtocol)
-from .types import SupportsClientProperties
 
 type LocalServerCommand = (
     ServerMessage
@@ -34,7 +33,7 @@ MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch na
 
 
 @final
-class ExternalClient(SupportsClientProperties):
+class ExternalClient:
     """A data class that represents the sending client of a PRIVMSG command
     arriving from the Twitch IRC server - an "external" client
     """
@@ -54,20 +53,33 @@ class ExternalClient(SupportsClientProperties):
         return NotImplemented
 
     @property
-    @override
+    def message(self) -> ServerMessage:
+        """The client's message"""
+        return self._message
+
+    @property
     def name(self) -> str:
+        """The client's name"""
         source = self.message.source
         return source[:source.find("!", MIN_NAME_SIZE)]
 
     @property
-    @override
     def display_name(self) -> str:
-        return self.message.tags["display-name"] or super().display_name
+        """The client's display name
+
+        Equivalent to ``name`` if a display name is not available.
+        """
+        return self.message.tags["display-name"] or self.name
 
     @property
-    def message(self) -> ServerMessage:
-        """The client's message"""
-        return self._message
+    def handle(self) -> str:
+        """The client's handle"""
+        return "@" + self.display_name
+
+    @property
+    def room(self) -> str:
+        """The client's room"""
+        return "#" + self.name
 
     @property
     def id(self) -> str:
@@ -83,24 +95,24 @@ class ExternalClient(SupportsClientProperties):
         return self.message.tags["color"]
 
     @property
-    def is_broadcaster(self) -> bool:
+    def broadcaster(self) -> bool:
         """True if the client is the broadcaster associated with the message's
         room, otherwise false
         """
         return self.room == self.message.room
 
     @property
-    def is_moderator(self) -> bool:
+    def moderator(self) -> bool:
         """True if the client is a moderator, otherwise false"""
         return self.message.tags["mod"] == "1"
 
     @property
-    def is_vip(self) -> bool:
+    def vip(self) -> bool:
         """True if the client is a VIP, otherwise false"""
         return "vip" in self.message.tags  # Presence indicates VIP
 
     @property
-    def is_subscriber(self) -> bool:
+    def subscriber(self) -> bool:
         """True if the client is a subscriber, otherwise false"""
         return self.message.tags["subscriber"] == "1"
 
