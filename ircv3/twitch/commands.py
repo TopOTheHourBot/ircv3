@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 __all__ = [
-    "LocalServerCommand",
     "ExternalClient",
     "ClientMessage",
     "ServerMessage",
@@ -18,16 +17,8 @@ from abc import ABCMeta, abstractmethod
 from collections.abc import Mapping
 from typing import Final, Literal, Optional, Self, final, override
 
-from ...abc import (ClientCommandProtocol, CommandProtocol,
+from ..abc import (ClientCommandProtocol, CommandProtocol,
                     ServerCommandProtocol)
-
-type LocalServerCommand = (
-    ServerMessage
-    | ServerJoin
-    | ServerPart
-    | RoomState
-    | Notice
-)
 
 MIN_NAME_SIZE: Final[Literal[3]] = 3  #: Size of the shortest possible Twitch name
 

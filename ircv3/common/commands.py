@@ -3,12 +3,12 @@ from __future__ import annotations
 __all__ = [
     "Pong",
     "Ping",
-    "RPLWelcome",
+    "Welcome",
 ]
 
 from typing import Final, Literal, Self, final, override
 
-from ...abc import (ClientCommandProtocol, CommandProtocol,
+from ..abc import (ClientCommandProtocol, CommandProtocol,
                     ServerCommandProtocol)
 
 
@@ -64,7 +64,7 @@ class Ping(ServerCommandProtocol):
 
 
 @final
-class RPLWelcome(ServerCommandProtocol):
+class Welcome(ServerCommandProtocol):
 
     __slots__ = ("_user", "_comment", "_source")
     _user: str
@@ -95,7 +95,7 @@ class RPLWelcome(ServerCommandProtocol):
 
     @classmethod
     def cast(cls, command: CommandProtocol) -> Self:
-        """Reinterpret ``command`` as a new ``RPLWelcome`` instance"""
+        """Reinterpret ``command`` as a new ``Welcome`` instance"""
         assert command.name == "001"
         assert len(command.arguments) == 1
         assert command.comment is not None
