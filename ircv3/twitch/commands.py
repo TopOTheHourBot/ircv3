@@ -11,6 +11,7 @@ __all__ = [
     "RoomState",
     "Notice",
     "GlobalUserState",
+    "UserState",
 ]
 
 from abc import ABCMeta, abstractmethod
@@ -567,6 +568,18 @@ class GlobalUserState(ServerCommandProtocol):
     def source(self) -> str:
         return self._source
 
+    @property
+    def id(self) -> str:
+        return self.tags["user-id"]
+
+    @property
+    def display_name(self) -> str:
+        return self.tags["display-name"]
+
+    @property
+    def color(self) -> str:
+        return self.tags["color"]
+
     @classmethod
     def cast(cls, command: CommandProtocol) -> Self:
         """Reinterpret ``command`` as a new ``GlobalUserState`` instance"""
@@ -575,4 +588,71 @@ class GlobalUserState(ServerCommandProtocol):
         assert command.comment is None
         assert command.tags is not None
         assert command.source is not None
-        return cls(tags=command.tags, source=command.source)
+        return cls(
+            tags=command.tags,
+            source=command.source,
+        )
+
+
+@final
+class UserState(ServerCommandProtocol):
+
+    __slots__ = ("_room", "_tags", "_source")
+    _room: str
+    _tags: Mapping[str, str]
+    _source: str
+    name: Final[Literal["USERSTATE"]] = "USERSTATE"
+    comment: Final[None] = None
+
+    def __init__(self, room: str, *, tags: Mapping[str, str], source: str) -> None:
+        self._room = room
+        self._tags = tags
+        self._source = source
+
+    @property
+    @override
+    def arguments(self) -> tuple[str]:
+        return (self.room,)
+
+    @property
+    @override
+    def tags(self) -> Mapping[str, str]:
+        return self._tags
+
+    @property
+    @override
+    def source(self) -> str:
+        return self._source
+
+    @property
+    def room(self) -> str:
+        return self._room
+
+    @property
+    def display_name(self) -> str:
+        return self.tags["display-name"]
+
+    @property
+    def color(self) -> str:
+        return self.tags["color"]
+
+    @property
+    def moderator(self) -> bool:
+        return self.tags["mod"] == "1"
+
+    @property
+    def subscriber(self) -> bool:
+        return self.tags["subscriber"] == "1"
+
+    @classmethod
+    def cast(cls, command: CommandProtocol) -> Self:
+        """Reinterpret ``command`` as a new ``UserState`` instance"""
+        assert command.name == "USERSTATE"
+        assert len(command.arguments) == 1
+        assert command.tags is not None
+        assert command.source is not None
+        return cls(
+            command.arguments[0],
+            tags=command.tags,
+            source=command.source,
+        )
